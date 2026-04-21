@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum ShareStrategy {
+  EQUAL
+  CUSTOM
+}
+
+model Group {
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  currency       String          @default("VND")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  User_Groups    User_Groups[]
+  Expenses       Expense[]
+  Settlements    Settlement[]
+  BalanceLedgers BalanceLedger[]
+
+  @@index([createdAt(sort: Desc)])
+}
+
+model User_Groups {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  userId  String @db.ObjectId
+  groupId String @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  User  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
+
+
+model User {
+  id                  String          @id @default(auto()) @map("_id") @db.ObjectId
+  accountLog          String
+  name                String
+  email               String          @unique
+  password            String
+  phone               String?
+  address             String?
+  groupId             String          @db.ObjectId
+  isActive            Boolean         @default(true)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  User_Groups         User_Groups[]           
+  paidExpenses        Expense[]       @relation("ExpensePaidBy")
+  splitShares         SplitShare[]    @relation("SplitShareMember")
+  outgoingSettlements Settlement[]    @relation("SettlementFrom")
+  incomingSettlements Settlement[]    @relation("SettlementTo")
+  debts               BalanceLedger[] @relation("LedgerFrom")
+  credits             BalanceLedger[] @relation("LedgerTo")
+
+  @@index([groupId, isActive])
+}
+
+model Expense {
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
+  groupId        String          @db.ObjectId
+  paidByMemberId String          @db.ObjectId
+  title          String
+  amount         Int
+  shareStrategy  ShareStrategy   @default(EQUAL)
+  notes          String?
+  occurredAt     DateTime        @default(now())
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  group          Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  paidBy         User          @relation("ExpensePaidBy", fields: [paidByMemberId], references: [id], onDelete: Restrict)
+  splitShares    SplitShare[]
+  ledgerEntries  BalanceLedger[]
+
+  @@index([groupId, occurredAt(sort: Desc)])
+  @@index([paidByMemberId, occurredAt(sort: Desc)])
+}
+
+model SplitShare {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  expenseId   String   @db.ObjectId
+  memberId    String   @db.ObjectId
+  shareAmount Int
+  createdAt   DateTime @default(now())
+  expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  member      User   @relation("SplitShareMember", fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@unique([expenseId, memberId])
+  @@index([memberId, createdAt(sort: Desc)])
+}
+
+model Settlement {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  groupId      String   @db.ObjectId
+  fromMemberId String   @db.ObjectId
+  toMemberId   String   @db.ObjectId
+  amount       Int
+  note         String?
+  settledAt    DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  group        Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  fromMember   User   @relation("SettlementFrom", fields: [fromMemberId], references: [id], onDelete: Restrict)
+  toMember     User   @relation("SettlementTo", fields: [toMemberId], references: [id], onDelete: Restrict)
+
+  @@index([groupId, settledAt(sort: Desc)])
+}
+
+model BalanceLedger {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  groupId         String   @db.ObjectId
+  fromMemberId    String   @db.ObjectId
+  toMemberId      String   @db.ObjectId
+  amount          Int
+  sourceExpenseId String?  @db.ObjectId
+  lastComputedAt  DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  fromMember      User   @relation("LedgerFrom", fields: [fromMemberId], references: [id], onDelete: Restrict)
+  toMember        User   @relation("LedgerTo", fields: [toMemberId], references: [id], onDelete: Restrict)
+  sourceExpense   Expense? @relation(fields: [sourceExpenseId], references: [id], onDelete: SetNull)
+
+  @@unique([groupId, fromMemberId, toMemberId], map: "group_from_to_unique")
+  @@index([groupId, amount(sort: Desc)])
+  @@index([fromMemberId, toMemberId])
+}
