@@ -16,6 +16,7 @@ model Group {
   id             String          @id @default(auto()) @map("_id") @db.ObjectId
   name           String
   currency       String          @default("VND")
+  order          Int?             @default(0)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   User_Groups    User_Groups[]
@@ -24,6 +25,7 @@ model Group {
   BalanceLedgers BalanceLedger[]
 
   @@index([createdAt(sort: Desc)])
+  @@index([order])
 }
 
 model User_Groups {
@@ -41,13 +43,12 @@ model User_Groups {
 
 model User {
   id                  String          @id @default(auto()) @map("_id") @db.ObjectId
-  accountLog          String
   name                String
   email               String          @unique
-  password            String
-  phone               String?
-  address             String?
-  groupId             String          @db.ObjectId
+//   password            String
+//   phone               String?
+//   address             String?
+  imgUrl              String?
   isActive            Boolean         @default(true)
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
@@ -59,7 +60,7 @@ model User {
   debts               BalanceLedger[] @relation("LedgerFrom")
   credits             BalanceLedger[] @relation("LedgerTo")
 
-  @@index([groupId, isActive])
+  @@index([isActive])
 }
 
 model Expense {

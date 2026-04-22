@@ -111,7 +111,7 @@ export default async function RootLayout({
                                 />
                             </div>
                             <div className="relative flex-1 overflow-y-auto pb-16 md:pb-6 md:pt-2">
-                                <div className="md:mx-auto md:max-w-7xl">
+                                <div className="md:mx-auto md:max-w-7xl 4xl:max-w-full">
                                     {children}
                                 </div>
                             </div>

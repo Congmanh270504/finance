@@ -7,6 +7,7 @@ import {
     FrameIcon,
     LifeBuoyIcon,
     MapIcon,
+    ReceiptTextIcon,
     PieChartIcon,
     SendIcon,
     Settings2Icon,
@@ -41,6 +42,7 @@ const data = {
             isActive: true,
             items: [
                 { title: "Overview", url: "/" },
+                { title: "Expense Table", url: "/expense" },
                 { title: "Expense History", url: "/history" },
                 { title: "Insights", url: "/insights" },
             ],
@@ -80,6 +82,11 @@ const data = {
             title: "Add Expense",
             url: "/new-expense",
             icon: <SendIcon />,
+        },
+        {
+            title: "Expense Table",
+            url: "/expense",
+            icon: <ReceiptTextIcon />,
         },
         {
             title: "Help",

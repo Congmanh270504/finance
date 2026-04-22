@@ -86,9 +86,12 @@ function DropdownMenuCheckboxItem({
   children,
   checked,
   inset,
+  closeOnSelect = true,
+  onSelect,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem> & {
   inset?: boolean
+  closeOnSelect?: boolean
 }) {
   return (
     <DropdownMenuPrimitive.CheckboxItem
@@ -99,6 +102,12 @@ function DropdownMenuCheckboxItem({
         className
       )}
       checked={checked}
+      onSelect={(event) => {
+        if (!closeOnSelect) {
+          event.preventDefault()
+        }
+        onSelect?.(event)
+      }}
       {...props}
     >
       <span

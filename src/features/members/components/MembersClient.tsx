@@ -1,234 +1,171 @@
 "use client";
 
 import * as React from "react";
-import { toast } from "sonner";
-import {
-    Share2Icon,
-    ArrowRightIcon,
-    ArrowLeftIcon,
-    QrCodeIcon,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { FolderCog, Layers3, UserCheck, UserMinus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { MemberAvatar } from "@/features/finance/components/shared/MemberAvatar";
-import { VietQrSheet } from "./VietQrSheet";
-import type { BalancesSummaryResponseV1 } from "@/features/finance/type";
+import { OverviewCard, type OverviewCardData } from "@/components/ui/card";
+import { GroupCrudDialog } from "@/features/groups/components/GroupCrudDialog";
+import type { GroupCrudItem } from "@/features/groups/types";
+import { sortGroupsByOrder } from "@/features/groups/utils";
+import { MembersManagementPanel } from "@/features/members/components/MembersManagementPanel";
+import type {
+    MemberManagementItem,
+    MembersManagementData,
+} from "@/features/members/types";
 
-function formatVND(amount: number) {
-    return new Intl.NumberFormat("vi-VN").format(amount) + " ₫";
-}
-
-interface QrTarget {
-    amount: number;
-    debtorName: string;
-    transferNote: string;
+function syncGroupCounts(
+    groups: GroupCrudItem[],
+    members: MemberManagementItem[],
+) {
+    return sortGroupsByOrder(
+        groups.map((group) => {
+            const relatedMembers = members.filter((member) =>
+                member.linkedGroupIds.includes(group.id),
+            );
+            return {
+                ...group,
+                memberCount: relatedMembers.length,
+                activeMemberCount: relatedMembers.filter(
+                    (member) => member.isActive,
+                ).length,
+            };
+        }),
+    );
 }
 
 export function MembersClient({
-    summary,
-    currentMemberId,
+    managementData,
     isDemo,
 }: {
-    summary: BalancesSummaryResponseV1;
-    currentMemberId: string;
+    managementData: MembersManagementData;
     isDemo?: boolean;
 }) {
-    const [qrTarget, setQrTarget] = React.useState<QrTarget | null>(null);
+    const [data, setData] =
+        React.useState<MembersManagementData>(managementData);
+    const [groupDialogOpen, setGroupDialogOpen] = React.useState(false);
 
-    function buildSettleText() {
-        const lines = ["💳 Group Settlement List", ""];
-        for (const entry of summary.ledger)
-            lines.push(
-                `${entry.fromMemberName} → ${entry.toMemberName}: ${formatVND(entry.amount)}`,
-            );
-        return lines.join("\n");
+    React.useEffect(() => {
+        setData(managementData);
+    }, [managementData]);
+
+    function updateMembers(nextMembers: MemberManagementItem[]) {
+        setData((current) => ({
+            groups: syncGroupCounts(current.groups, nextMembers),
+            members: nextMembers,
+        }));
     }
 
+    function updateGroups(nextGroups: GroupCrudItem[]) {
+        setData((current) => ({
+            groups: syncGroupCounts(nextGroups, current.members),
+            members: current.members.map((member) => {
+                const nextLinkedGroupIds = member.linkedGroupIds.filter(
+                    (groupId) =>
+                        nextGroups.some((group) => group.id === groupId),
+                );
+                const nextLinkedGroupNames = nextGroups
+                    .filter((group) => nextLinkedGroupIds.includes(group.id))
+                    .map((group) => group.name);
+
+                return {
+                    ...member,
+                    linkedGroupIds: nextLinkedGroupIds,
+                    linkedGroupNames: nextLinkedGroupNames,
+                    linkedGroupLabel:
+                        nextLinkedGroupNames.length > 0
+                            ? nextLinkedGroupNames.join(", ")
+                            : "Chua co group",
+                };
+            }),
+        }));
+    }
+
+    const overviewCards = React.useMemo<OverviewCardData[]>(() => {
+        const totalMembers = data.members.length;
+        const activeMembers = data.members.filter(
+            (member) => member.isActive,
+        ).length;
+        const inactiveMembers = totalMembers - activeMembers;
+        const totalGroups = data.groups.length;
+        const averageMembersPerGroup =
+            totalGroups > 0 ? (totalMembers / totalGroups).toFixed(1) : "0.0";
+
+        return [
+            {
+                title: "Total Members",
+                value: totalMembers,
+                icon: Users,
+            },
+            {
+                title: "Active Members",
+                value: activeMembers,
+                icon: UserCheck,
+            },
+            {
+                title: "Inactive Members",
+                value: inactiveMembers,
+                icon: UserMinus,
+            },
+            {
+                title: "Managed Groups",
+                value: totalGroups,
+                icon: Layers3,
+            },
+        ];
+    }, [data.groups, data.members]);
+
     return (
-        <div className="space-y-4 pb-4 pt-4 px-4">
-            {isDemo && (
-                <div className="rounded-lg border border-amber-200/60 bg-amber-50/80 dark:bg-amber-950/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-400 backdrop-blur-sm">
-                    Demo mode – sample data
+        <div className="px-4 pb-4 pt-4">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <h1 className="text-lg font-bold">Thành viên</h1>
+                    <p className="text-xs text-muted-foreground">
+                        Quản lý member theo group với grouped table và CRUD trực
+                        tiếp.
+                    </p>
                 </div>
-            )}
-            <div className="flex items-center justify-between animate-fade-in-down">
-                <h2 className="text-sm font-semibold font-mono text-gradient uppercase tracking-widest">
-                    Thành viên nhóm
-                </h2>
                 <Button
+                    type="button"
                     variant="outline"
-                    size="sm"
-                    className="gap-1.5 text-xs h-8 border-primary/20 hover:border-primary/40 hover:bg-primary/5"
-                    onClick={() =>
-                        navigator.clipboard.writeText(buildSettleText()).then(
-                            () => toast.success("Copied settlement list"),
-                            () => toast.error("Cannot copy"),
-                        )
-                    }
+                    className="gap-2 self-start"
+                    onClick={() => setGroupDialogOpen(true)}
                 >
-                    <Share2Icon className="size-3.5" /> Copy Settlement
+                    <FolderCog className="size-4" />
+                    Groups
                 </Button>
             </div>
 
-            {summary.memberBalances.map((member, idx) => {
-                const isMe = member.memberId === currentMemberId;
-                const owes = summary.ledger.filter(
-                    (l) => l.fromMemberId === member.memberId,
-                );
-                const owedBy = summary.ledger.filter(
-                    (l) => l.toMemberId === member.memberId,
-                );
-                return (
-                    <Card
-                        key={member.memberId}
-                        className={[
-                            `py-0 overflow-hidden hover-lift border-glow animate-fade-in-up stagger-${Math.min(idx + 1, 8)}`,
-                            isMe
-                                ? "border-primary/30 ring-1 ring-primary/20 glass-strong"
-                                : "border-border/50 glass",
-                        ].join(" ")}
-                    >
-                        <CardHeader className="px-4 pt-4 pb-3 flex-row items-center gap-3">
-                            <MemberAvatar name={member.memberName} size="md" />
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <CardTitle className="text-sm">
-                                        {member.memberName}
-                                    </CardTitle>
-                                    {isMe && (
-                                        <Badge
-                                            variant="secondary"
-                                            className="text-[10px] bg-primary/15 text-primary border border-primary/20"
-                                        >
-                                            Bạn
-                                        </Badge>
-                                    )}
-                                </div>
-                            </div>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div className="text-right">
-                                        <p
-                                            className={[
-                                                "text-base font-bold font-mono tabular-nums",
-                                                member.netAmount > 0
-                                                    ? "text-emerald-500 dark:text-emerald-400"
-                                                    : member.netAmount < 0
-                                                      ? "text-red-500"
-                                                      : "text-muted-foreground",
-                                            ].join(" ")}
-                                        >
-                                            {member.netAmount > 0 ? "+" : ""}
-                                            {formatVND(
-                                                Math.abs(member.netAmount),
-                                            )}
-                                        </p>
-                                        <p className="text-[10px] text-muted-foreground">
-                                            {member.netAmount > 0
-                                                ? "Owed to You"
-                                                : member.netAmount < 0
-                                                  ? "You Owe"
-                                                  : "Even"}
-                                        </p>
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent side="left">
-                                    <p>Net balance for {member.memberName}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </CardHeader>
-                        {(owes.length > 0 || owedBy.length > 0) && (
-                            <>
-                                <Separator className="opacity-40" />
-                                <CardContent className="px-4 py-3 space-y-2">
-                                    {owedBy.map((entry) => (
-                                        <div
-                                            key={entry.ledgerId}
-                                            className="flex items-center gap-2 text-xs"
-                                        >
-                                            <MemberAvatar
-                                                name={entry.fromMemberName}
-                                                size="sm"
-                                                className="size-5 text-[8px]"
-                                            />
-                                            <span className="text-muted-foreground flex items-center gap-1">
-                                                {entry.fromMemberName}
-                                                <ArrowRightIcon className="size-3 text-emerald-500" />
-                                                {member.memberName}
-                                            </span>
-                                            <span className="ml-auto font-semibold font-mono text-emerald-600 dark:text-emerald-400 tabular-nums">
-                                                {formatVND(entry.amount)}
-                                            </span>
-                                            {entry.toMemberId ===
-                                                currentMemberId && (
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon-sm"
-                                                            className="h-6 w-6 rounded-full text-primary hover:bg-primary/10"
-                                                            onClick={() =>
-                                                                setQrTarget({
-                                                                    amount: entry.amount,
-                                                                    debtorName:
-                                                                        entry.fromMemberName,
-                                                                    transferNote: `Tra no ${entry.fromMemberName}`,
-                                                                })
-                                                            }
-                                                        >
-                                                            <QrCodeIcon className="size-3.5" />
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent side="left">
-                                                        <p>
-                                                            Generate QR Payment
-                                                        </p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            )}
-                                        </div>
-                                    ))}
-                                    {owes.map((entry) => (
-                                        <div
-                                            key={entry.ledgerId}
-                                            className="flex items-center gap-2 text-xs"
-                                        >
-                                            <MemberAvatar
-                                                name={member.memberName}
-                                                size="sm"
-                                                className="size-5 text-[8px]"
-                                            />
-                                            <span className="text-muted-foreground flex items-center gap-1">
-                                                {member.memberName}
-                                                <ArrowLeftIcon className="size-3 text-red-400" />
-                                                {entry.toMemberName}
-                                            </span>
-                                            <span className="ml-auto font-semibold font-mono text-red-500 tabular-nums">
-                                                {formatVND(entry.amount)}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </CardContent>
-                            </>
-                        )}
-                    </Card>
-                );
-            })}
-            <VietQrSheet
-                open={qrTarget !== null}
-                onOpenChange={(v) => {
-                    if (!v) setQrTarget(null);
-                }}
-                amount={qrTarget?.amount ?? 0}
-                debtorName={qrTarget?.debtorName ?? ""}
-                transferNote={qrTarget?.transferNote ?? ""}
+            <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {overviewCards.map((card) => (
+                    <OverviewCard key={card.title} data={card} />
+                ))}
+            </div>
+
+            <MembersManagementPanel
+                data={data}
+                isDemo={isDemo}
+                onMembersChange={updateMembers}
+            />
+
+            <GroupCrudDialog
+                open={groupDialogOpen}
+                onOpenChange={setGroupDialogOpen}
+                groups={data.groups}
+                isDemo={isDemo}
+                onCreated={(group) => updateGroups([...data.groups, group])}
+                onReordered={updateGroups}
+                onUpdated={(group) =>
+                    updateGroups(
+                        data.groups.map((item) =>
+                            item.id === group.id ? group : item,
+                        ),
+                    )
+                }
+                onDeleted={(groupId) =>
+                    updateGroups(
+                        data.groups.filter((group) => group.id !== groupId),
+                    )
+                }
             />
         </div>
     );
