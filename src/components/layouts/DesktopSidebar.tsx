@@ -43,7 +43,7 @@ const MAIN_NAV_ITEMS: NavItem[] = [
 ];
 
 const SECONDARY_NAV_ITEMS: NavItem[] = [
-  { href: "/new-expense", label: "Them chi tieu", icon: PlusCircleIcon, accent: true },
+  { href: "/expense", label: "Them chi tieu", icon: PlusCircleIcon, accent: true },
   { href: "/settings", label: "Cai dat", icon: SettingsIcon },
 ];
 

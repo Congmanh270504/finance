@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
     BookOpenIcon,
     BotIcon,
@@ -29,11 +30,6 @@ import {
 } from "@/components/ui/sidebar";
 
 const data = {
-    user: {
-        name: "Cong Manh",
-        email: "congmanh270504@demo.local",
-        avatar: "",
-    },
     navMain: [
         {
             title: "Dashboard",
@@ -44,6 +40,7 @@ const data = {
                 { title: "Overview", url: "/" },
                 { title: "Expense Table", url: "/expense" },
                 { title: "Expense History", url: "/history" },
+                { title: "My Debt History", url: "/my-ledger-history" },
                 { title: "Insights", url: "/insights" },
             ],
         },
@@ -80,7 +77,7 @@ const data = {
     navSecondary: [
         {
             title: "Add Expense",
-            url: "/new-expense",
+            url: "/expense",
             icon: <SendIcon />,
         },
         {
@@ -97,7 +94,7 @@ const data = {
     projects: [
         {
             name: "Da Lat Travel Group",
-            url: "/dashboard",
+            url: "/",
             icon: <FrameIcon />,
         },
         {
@@ -116,10 +113,16 @@ const data = {
 export function AppSidebar({
     groupName,
     memberCount,
+    user,
     ...props
 }: React.ComponentProps<typeof Sidebar> & {
     groupName: string;
     memberCount: number;
+    user: {
+        name: string;
+        email: string;
+        avatar: string;
+    };
 }) {
     return (
         <Sidebar variant="inset" collapsible="icon" {...props}>
@@ -127,7 +130,7 @@ export function AppSidebar({
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <a href="/dashboard">
+                            <Link href="/">
                                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                                     <TerminalIcon className="size-4" />
                                 </div>
@@ -139,7 +142,7 @@ export function AppSidebar({
                                         {memberCount} members
                                     </span>
                                 </div>
-                            </a>
+                            </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
@@ -150,7 +153,7 @@ export function AppSidebar({
                 <NavSecondary items={data.navSecondary} className="mt-auto" />
             </SidebarContent>
             <SidebarFooter>
-                <NavUser user={data.user} />
+                <NavUser user={user} />
             </SidebarFooter>
         </Sidebar>
     );

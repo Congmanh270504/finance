@@ -43,6 +43,7 @@ export const settingsProfileSchema = z.object({
   displayName: z.string(),
   username: z.string(),
   accountTagline: z.string(),
+  avatarUrl: z.string().nullable().optional(),
   email: z.string(),
   emailHint: z.string(),
   bio: z.string(),

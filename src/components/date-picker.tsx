@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -9,8 +11,6 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 
 interface DatePickerSimpleProps {
     value?: Date;
@@ -44,9 +44,9 @@ export function DatePickerSimple({
                     >
                         <CalendarIcon />
                         {value ? (
-                            format(value, "dd-MM-yyyy")
+                            format(value, "MMM d, yyyy")
                         ) : (
-                            <span>Chọn ngày</span>
+                            <span>Select date</span>
                         )}
                     </Button>
                 </PopoverTrigger>

@@ -1,11 +1,13 @@
 "use server";
 
+import { hash } from "bcryptjs";
 import type { BalanceLedger, Group, User, User_Groups } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { DEMO_GROUP_NAME } from "@/features/finance/constants";
 import { financeV1Fixtures } from "@/features/finance/mock-fixtures";
 import { sortGroupsByOrder } from "@/features/groups/utils";
 import {
+    assignExistingMembersSchema,
     createMemberSchema,
     updateMemberSchema,
 } from "@/features/members/schema";
@@ -119,7 +121,7 @@ function buildManagementData(
                 linkedGroupLabel:
                     linkedGroupNames.length > 0
                         ? linkedGroupNames.join(", ")
-                        : "Chua co group",
+                        : "No groups assigned",
                 oweAmount,
                 receiveAmount,
                 netAmount: receiveAmount - oweAmount,
@@ -161,7 +163,18 @@ function buildDemoManagementData(): MembersManagementData {
                 .replace(/[\u0300-\u036f]/g, "")
                 .replace(/\s+/g, ".")
                 .toLowerCase()}@demo.local`,
+            passwordHash: null,
             imgUrl: null,
+            username: null,
+            accountTagline: null,
+            bio: null,
+            pronouns: null,
+            profileUrl: null,
+            company: null,
+            location: null,
+            avatarTone: null,
+            socialLinks: null,
+            profileHighlights: null,
             isActive: true,
             createdAt,
             updatedAt: createdAt,
@@ -199,7 +212,7 @@ function memberErrorMessage(error: unknown, fallback: string) {
         "code" in error &&
         error.code === "P2002"
     ) {
-        return "Email da ton tai";
+        return "Email already exists";
     }
 
     return error instanceof Error ? error.message : fallback;
@@ -254,6 +267,59 @@ async function buildMemberItemById(
     );
 }
 
+async function buildMemberItemsByIds(
+    memberIds: string[],
+): Promise<MemberManagementItem[]> {
+    const normalizedIds = Array.from(new Set(memberIds.filter(Boolean)));
+
+    if (normalizedIds.length === 0) {
+        return [];
+    }
+
+    const [members, groups, userGroups, ledgers] = await Promise.all([
+        prisma.user.findMany({
+            where: {
+                id: {
+                    in: normalizedIds,
+                },
+            },
+        }),
+        prisma.group.findMany({
+            orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+        }),
+        prisma.user_Groups.findMany({
+            where: {
+                userId: {
+                    in: normalizedIds,
+                },
+            },
+            select: {
+                userId: true,
+                groupId: true,
+                createdAt: true,
+            },
+            orderBy: { createdAt: "asc" },
+        }),
+        prisma.balanceLedger.findMany({
+            where: {
+                OR: [
+                    { fromMemberId: { in: normalizedIds } },
+                    { toMemberId: { in: normalizedIds } },
+                ],
+            },
+            select: {
+                fromMemberId: true,
+                toMemberId: true,
+                amount: true,
+            },
+        }),
+    ]);
+
+    return buildManagementData(groups, members, ledgers, userGroups).members.filter(
+        (member) => normalizedIds.includes(member.id),
+    );
+}
+
 export async function getMembersManagementData(): Promise<{
     data: MembersManagementData;
     isDemo: boolean;
@@ -304,7 +370,7 @@ export async function createMemberAction(
             success: false,
             error:
                 parsed.error.issues[0]?.message ??
-                "Du lieu thanh vien khong hop le",
+                "Invalid member data",
         };
     }
 
@@ -314,7 +380,8 @@ export async function createMemberAction(
         const created = await prisma.user.create({
             data: {
                 name: parsed.data.name,
-                email: parsed.data.email,
+                email: parsed.data.email.toLowerCase(),
+                passwordHash: await hash(parsed.data.password, 10),
                 imgUrl: normalizeOptionalText(parsed.data.imgUrl),
                 isActive: parsed.data.isActive,
             },
@@ -328,11 +395,11 @@ export async function createMemberAction(
 
         return item
             ? { success: true, data: item }
-            : { success: false, error: "Khong the chuan hoa du lieu member" };
+            : { success: false, error: "Unable to normalize member data" };
     } catch (error) {
         return {
             success: false,
-            error: memberErrorMessage(error, "Khong the tao member"),
+            error: memberErrorMessage(error, "Unable to create member"),
         };
     }
 }
@@ -346,7 +413,7 @@ export async function updateMemberAction(
             success: false,
             error:
                 parsed.error.issues[0]?.message ??
-                "Du lieu cap nhat khong hop le",
+                "Invalid member update data",
         };
     }
 
@@ -357,9 +424,14 @@ export async function updateMemberAction(
             where: { id: parsed.data.id },
             data: {
                 name: parsed.data.name,
-                email: parsed.data.email,
+                email: parsed.data.email.toLowerCase(),
                 imgUrl: normalizeOptionalText(parsed.data.imgUrl),
                 isActive: parsed.data.isActive,
+                ...(parsed.data.password?.trim()
+                    ? {
+                          passwordHash: await hash(parsed.data.password.trim(), 10),
+                      }
+                    : {}),
             },
         });
 
@@ -373,12 +445,73 @@ export async function updateMemberAction(
             ? { success: true, data: item }
             : {
                   success: false,
-                  error: "Khong the lay du lieu member sau cap nhat",
+                  error: "Unable to load member data after update",
               };
     } catch (error) {
         return {
             success: false,
-            error: memberErrorMessage(error, "Khong the cap nhat member"),
+            error: memberErrorMessage(error, "Unable to update member"),
+        };
+    }
+}
+
+export async function assignExistingMembersToGroupsAction(
+    input: unknown,
+): Promise<MembersActionResponse<MemberManagementItem[]>> {
+    const parsed = assignExistingMembersSchema.safeParse(input);
+    if (!parsed.success) {
+        return {
+            success: false,
+            error:
+                parsed.error.issues[0]?.message ??
+                "Invalid user assignment data",
+        };
+    }
+
+    try {
+        const userIds = Array.from(new Set(parsed.data.userIds));
+        const linkedGroupIds = normalizeLinkedGroupIds(parsed.data.linkedGroupIds);
+        const existingLinks = await prisma.user_Groups.findMany({
+            where: {
+                userId: { in: userIds },
+                groupId: { in: linkedGroupIds },
+            },
+            select: {
+                userId: true,
+                groupId: true,
+            },
+        });
+
+        const existingKeySet = new Set(
+            existingLinks.map((item) => `${item.userId}:${item.groupId}`),
+        );
+        const nextLinks = userIds.flatMap((userId) =>
+            linkedGroupIds
+                .filter((groupId) => !existingKeySet.has(`${userId}:${groupId}`))
+                .map((groupId) => ({
+                    userId,
+                    groupId,
+                })),
+        );
+
+        if (nextLinks.length > 0) {
+            await prisma.user_Groups.createMany({
+                data: nextLinks,
+            });
+        }
+
+        const items = await buildMemberItemsByIds(userIds);
+
+        revalidatePath("/members");
+
+        return {
+            success: true,
+            data: items,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: memberErrorMessage(error, "Unable to assign users to groups"),
         };
     }
 }
@@ -387,7 +520,7 @@ export async function deleteMemberAction(
     memberId: string,
 ): Promise<MembersActionResponse<{ id: string }>> {
     if (!memberId) {
-        return { success: false, error: "Thieu member id" };
+        return { success: false, error: "Member ID is required" };
     }
 
     try {
@@ -418,7 +551,7 @@ export async function deleteMemberAction(
         if (referencedCount > 0) {
             return {
                 success: false,
-                error: "Member dang phat sinh du lieu giao dich nen chua the xoa",
+                error: "This member is linked to transaction data and cannot be deleted yet.",
             };
         }
 
@@ -439,7 +572,7 @@ export async function deleteMemberAction(
     } catch (error) {
         return {
             success: false,
-            error: memberErrorMessage(error, "Khong the xoa member"),
+            error: memberErrorMessage(error, "Unable to delete member"),
         };
     }
 }

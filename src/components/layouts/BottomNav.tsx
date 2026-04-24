@@ -24,7 +24,7 @@ const NAV_ITEMS: NavItem[] = [
     { href: "/dashboard", label: "Dashboard", icon: HomeIcon },
     { href: "/history", label: "History", icon: ClockIcon },
     {
-        href: "/new-expense",
+        href: "/expense",
         label: "New Expense",
         icon: PlusCircleIcon,
         primary: true,

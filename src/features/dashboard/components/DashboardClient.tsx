@@ -317,7 +317,7 @@ export function DashboardClient({
                     className="w-full gap-2 shadow-lg animate-pulse-glow"
                     size="lg"
                 >
-                    <Link href="/new-expense">
+                    <Link href="/expense">
                         <PlusIcon className="size-5" />
                         Add New Expense
                     </Link>

@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type {
   SettingsNavItem,
@@ -52,6 +53,16 @@ const ICONS = {
   "folder-git-2": FolderGit2Icon,
   package: PackageIcon,
 } as const;
+
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
 
 function SettingsNavLink({ item }: { item: SettingsNavItem }) {
   const Icon = ICONS[item.icon];
@@ -318,13 +329,15 @@ export function SettingsClient({
                       <div className="mt-5 flex flex-col items-start gap-4">
                         <div className="relative">
                           <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.95),rgba(161,161,170,0.1)_38%,rgba(39,39,42,0.65)_100%)] blur-sm" />
-                          <div className="relative flex size-44 items-center justify-center overflow-hidden rounded-full border border-zinc-300 bg-[radial-gradient(circle_at_35%_30%,#fafafa_0%,#e4e4e7_35%,#52525b_100%)] text-4xl font-black uppercase tracking-[0.18em] text-zinc-900 shadow-[inset_0_1px_1px_rgba(255,255,255,0.7),0_12px_30px_-18px_rgba(15,23,42,0.35)]">
-                            {profile.displayName
-                              .split(" ")
-                              .slice(0, 2)
-                              .map((part) => part[0])
-                              .join("")}
-                          </div>
+                          <Avatar className="relative size-44 overflow-hidden border border-zinc-300 bg-[radial-gradient(circle_at_35%_30%,#fafafa_0%,#e4e4e7_35%,#52525b_100%)] text-zinc-900 shadow-[inset_0_1px_1px_rgba(255,255,255,0.7),0_12px_30px_-18px_rgba(15,23,42,0.35)] after:hidden">
+                            <AvatarImage
+                              src={profile.avatarUrl ?? undefined}
+                              alt={profile.displayName}
+                            />
+                            <AvatarFallback className="bg-transparent text-4xl font-black uppercase tracking-[0.18em] text-zinc-900">
+                              {getInitials(profile.displayName)}
+                            </AvatarFallback>
+                          </Avatar>
                         </div>
                         <Button variant="outline" className="bg-white/85">
                           <PencilIcon className="size-4" />

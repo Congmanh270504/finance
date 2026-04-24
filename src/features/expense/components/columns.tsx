@@ -3,9 +3,12 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import {
     ArrowUpDown,
+    Eye,
     EyeIcon,
     MoreHorizontalIcon,
+    Pencil,
     PencilIcon,
+    Trash2,
     Trash2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +19,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { ExpenseRow } from "@/features/expense/types";
+import { ActionIconButton } from "@/components/action-icon-button";
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat("vi-VN").format(amount) + " ₫";
@@ -41,6 +45,7 @@ function SortableHeader({
     return (
         <Button
             variant="ghost"
+            className="border-none"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
             {label}
@@ -62,100 +67,113 @@ export function getExpenseColumns({
         {
             accessorKey: "title",
             header: ({ column }) => (
-                <SortableHeader label="Khoản chi" column={column} />
+                <div className="flex justify-center">
+                    <SortableHeader label="Khoản chi" column={column} />
+                </div>
             ),
             cell: ({ row }) => (
-                <button
-                    type="button"
-                    className="font-medium underline underline-offset-4"
+                <div
+                    className="text-center"
                     onClick={(event) => {
                         event.stopPropagation();
                         onView(row.original);
                     }}
                 >
                     {row.original.title}
-                </button>
+                </div>
             ),
         },
         {
             accessorKey: "paidByName",
             header: ({ column }) => (
-                <SortableHeader label="Người trả" column={column} />
+                <div className="flex justify-center">
+                    <SortableHeader label="Người trả" column={column} />
+                </div>
+            ),
+            cell: ({ row }) => (
+                <div className="text-center">{row.original.paidByName}</div>
+            ),
+        },
+        {
+            accessorKey: "groupName",
+            header: ({ column }) => (
+                <div className="flex justify-center">
+                    <SortableHeader label="Tên nhóm" column={column} />
+                </div>
+            ),
+            cell: ({ row }) => (
+                <div className="text-center">{row.original.groupName}</div>
             ),
         },
         {
             accessorKey: "amount",
             header: ({ column }) => (
-                <SortableHeader label="Số tiền" column={column} />
+                <div className="flex justify-center">
+                    <SortableHeader label="Số tiền" column={column} />
+                </div>
             ),
             cell: ({ row }) => (
-                <span className="font-semibold tabular-nums">
+                <div className="font-semibold tabular-nums text-center">
                     {formatCurrency(row.original.amount)}
-                </span>
+                </div>
             ),
         },
         {
             accessorKey: "shareCount",
             header: ({ column }) => (
-                <SortableHeader label="Số người" column={column} />
+                <div className="flex justify-center">
+                    <SortableHeader label="Số người" column={column} />
+                </div>
             ),
-            cell: ({ row }) => `${row.original.shareCount} người`,
+            cell: ({ row }) => (
+                <div className="text-center">
+                    {row.original.shareCount} người
+                </div>
+            ),
         },
         {
             accessorKey: "occurredAt",
             header: ({ column }) => (
-                <SortableHeader label="Ngày chi" column={column} />
+                <div className="flex justify-center">
+                    <SortableHeader label="Ngày chi" column={column} />
+                </div>
             ),
-            cell: ({ row }) => formatDate(row.original.occurredAt),
+            cell: ({ row }) => (
+                <div className="text-center">
+                    {formatDate(row.original.occurredAt)}
+                </div>
+            ),
         },
         {
             id: "actions",
-            header: "Thao tác",
+            header: () => <div className="text-center">Thao tác</div>,
             enableSorting: false,
             cell: ({ row }) => (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            data-no-row-open="true"
-                            onClick={(event) => event.stopPropagation()}
-                        >
-                            <MoreHorizontalIcon className="size-4" />
-                            <span className="sr-only">Mở thao tác</span>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                            onClick={(event) => {
-                                event.stopPropagation();
-                                onView(row.original);
-                            }}
-                        >
-                            <EyeIcon className="size-4" />
-                            Xem
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={(event) => {
-                                event.stopPropagation();
-                                onEdit(row.original);
-                            }}
-                        >
-                            <PencilIcon className="size-4" />
-                            Sửa
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={(event) => {
-                                event.stopPropagation();
-                                onDelete(row.original);
-                            }}
-                        >
-                            <Trash2Icon className="size-4" />
-                            Xóa
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div
+                    className="flex items-center justify-end gap-1"
+                    data-no-row-open="true"
+                    onClick={(event) => event.stopPropagation()}
+                >
+                    <ActionIconButton
+                        label="View"
+                        onClick={() => onView(row.original)}
+                    >
+                        <Eye className="size-4 text-sky-600" />
+                    </ActionIconButton>
+                    <ActionIconButton
+                        label="Edit"
+                        onClick={() => onEdit(row.original)}
+                    >
+                        <Pencil className="size-4 text-amber-600" />
+                    </ActionIconButton>
+                    <ActionIconButton
+                        label="Delete"
+                        onClick={() => onDelete(row.original)}
+                        variant="outline"
+                    >
+                        <Trash2 className="size-4 text-rose-600" />
+                    </ActionIconButton>
+                </div>
             ),
         },
     ];

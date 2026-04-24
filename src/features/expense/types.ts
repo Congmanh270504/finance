@@ -7,6 +7,7 @@ export type ExpenseParticipant = {
 };
 
 export type ExpenseRow = Expense & {
+    groupName: string;
     paidByName: string;
     shareCount: number;
     participantNames: string[];
@@ -27,15 +28,34 @@ export type ExpenseListResult = {
 };
 
 export type ExpenseListParams = {
-    groupId: string;
+    groupId?: string;
     query?: string;
     page?: number;
     limit?: number;
 };
 
-export type ExpenseActionResponse = {
+export type ExpenseFormMember = {
+    id: string;
+    name: string;
+    avatarUrl?: string;
+    avatarFallback?: string;
+};
+
+export type ExpenseFormGroup = {
+    id: string;
+    name: string;
+    currency: string;
+};
+
+export type ExpenseCreateResult = {
+    expense: ExpenseRow;
+    ledgerUpdates: number;
+};
+
+export type ExpenseActionResponse<T = undefined> = {
     success: boolean;
     error?: string;
+    data?: T;
 };
 
 export type ExpenseShareStrategyLabel = Record<ShareStrategy, string>;

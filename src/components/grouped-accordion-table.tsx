@@ -28,6 +28,7 @@ export type GroupedSection<TData> = {
     key: string;
     label: string;
     items: TData[];
+    action?: React.ReactNode;
 };
 
 interface GroupedAccordionTableProps<TData, TValue> {
@@ -178,7 +179,10 @@ export function GroupedAccordionTable<TData, TValue>({
                     value={group.key}
                     className="mb-2 overflow-hidden rounded-xl border-blue-200/70 bg-linear-to-r from-blue-50 via-sky-50 to-indigo-50 px-1 shadow-xs"
                 >
-                    <AccordionTrigger className=" px-3 py-3 hover:no-underline items-center border-none">
+                    <AccordionTrigger
+                        className="px-3 py-3 hover:no-underline items-center border-none"
+                        action={group.action}
+                    >
                         <div className="flex w-full items-center justify-between  px-3 py-2 pr-2 backdrop-blur-sm">
                             <span className="text-sm font-semibold bg-gradient-to-r from-blue-500  to-indigo-600 text-transparent bg-clip-text ">
                                 {group.label}

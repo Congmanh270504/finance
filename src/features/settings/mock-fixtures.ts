@@ -5,6 +5,7 @@ export const settingsFixtures: SettingsPageData = {
     displayName: "Tran Cong Manh",
     username: "congmanh270504",
     accountTagline: "Tai khoan ca nhan",
+    avatarUrl: null,
     email: "congmanh270504@demo.local",
     emailHint:
       "Email hien dang o che do rieng tu. Ban co the doi sang dia chi cong khai neu can hien thi thong tin lien he.",

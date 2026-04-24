@@ -74,7 +74,7 @@ export function MembersClient({
                     linkedGroupLabel:
                         nextLinkedGroupNames.length > 0
                             ? nextLinkedGroupNames.join(", ")
-                            : "Chua co group",
+                            : "No groups assigned",
                 };
             }),
         }));
@@ -118,10 +118,10 @@ export function MembersClient({
         <div className="px-4 pb-4 pt-4">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <h1 className="text-lg font-bold">Thành viên</h1>
+                    <h1 className="text-lg font-bold">Members</h1>
                     <p className="text-xs text-muted-foreground">
-                        Quản lý member theo group với grouped table và CRUD trực
-                        tiếp.
+                        Manage members by group with a grouped table and inline
+                        CRUD actions.
                     </p>
                 </div>
                 <Button

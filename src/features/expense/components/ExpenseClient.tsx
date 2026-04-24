@@ -1,33 +1,44 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTransition, useState } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { PencilIcon, PlusIcon, SearchIcon, TablePropertiesIcon } from "lucide-react";
-import Link from "next/link";
+import { PlusIcon, SearchIcon, TablePropertiesIcon } from "lucide-react";
 import DeleteDialog from "@/components/delete-dialog";
 import { DataTable } from "@/components/data-table";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { deleteExpenseAction } from "@/features/expense/action";
 import { ExpenseDetailDialog } from "@/features/expense/components/ExpenseDetailDialog";
+import { NewExpenseForm } from "@/features/expense/components/NewExpenseForm";
 import { getExpenseColumns } from "@/features/expense/components/columns";
-import type { ExpenseListPagination, ExpenseRow } from "@/features/expense/types";
+import type {
+    ExpenseFormGroup,
+    ExpenseListPagination,
+    ExpenseRow,
+} from "@/features/expense/types";
 
 export default function ExpenseClient({
     initialData,
     initialPagination,
     initialQuery,
     source,
+    groups,
+    currentMemberId,
+    initialGroupId,
 }: {
     initialData: ExpenseRow[];
     initialPagination: ExpenseListPagination;
     initialQuery?: string;
     source: "database" | "demo";
+    groups: ExpenseFormGroup[];
+    currentMemberId: string;
+    initialGroupId: string;
 }) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const [createOpen, setCreateOpen] = useState(false);
     const [selectedExpense, setSelectedExpense] = useState<ExpenseRow | null>(
         null,
     );
@@ -37,8 +48,8 @@ export default function ExpenseClient({
     const columns = getExpenseColumns({
         onView: setSelectedExpense,
         onEdit: (expense) => {
-            toast.info("Luồng sửa chưa được triển khai", {
-                description: `Tạm thời chỉ hỗ trợ xem hoặc xóa khoản "${expense.title}".`,
+            toast.info("Edit flow is not available yet", {
+                description: `You can currently view or delete "${expense.title}".`,
             });
         },
         onDelete: setDeleteTarget,
@@ -71,13 +82,13 @@ export default function ExpenseClient({
             const result = await deleteExpenseAction({ id: deleteTarget.id });
 
             if (!result.success) {
-                toast.error("Không thể xóa khoản chi", {
+                toast.error("Failed to delete expense", {
                     description: result.error,
                 });
                 return;
             }
 
-            toast.success("Đã xóa khoản chi", {
+            toast.success("Expense deleted", {
                 description: deleteTarget.title,
             });
             setDeleteTarget(null);
@@ -96,23 +107,21 @@ export default function ExpenseClient({
                         <div className="flex items-center gap-2">
                             <TablePropertiesIcon className="size-5 text-primary" />
                             <h1 className="text-lg font-bold">
-                                Bảng khoản chi
+                                Expense Table
                             </h1>
                             {source === "demo" ? (
                                 <Badge variant="warning">Demo data</Badge>
                             ) : null}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            Theo dõi toàn bộ khoản chi theo dạng bảng và mở
-                            nhanh chi tiết từng dòng.
+                            Review all expenses in table view and open each row
+                            for more details.
                         </p>
                     </div>
 
-                    <Button asChild>
-                        <Link href="/new-expense">
-                            <PlusIcon className="size-4" />
-                            Thêm khoản chi
-                        </Link>
+                    <Button onClick={() => setCreateOpen(true)}>
+                        <PlusIcon className="size-4" />
+                        Add expense
                     </Button>
                 </div>
 
@@ -121,7 +130,7 @@ export default function ExpenseClient({
                         <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             defaultValue={initialQuery}
-                            placeholder="Tìm theo tên khoản chi hoặc người trả"
+                            placeholder="Search by expense title or payer"
                             className="pl-9"
                             onChange={(event) =>
                                 updateQueryParam(event.target.value.trim())
@@ -129,8 +138,8 @@ export default function ExpenseClient({
                         />
                     </div>
                     <div className="text-sm text-muted-foreground">
-                        {initialPagination.total} khoản chi
-                        {isPending ? " • đang cập nhật..." : ""}
+                        {initialPagination.total} expenses
+                        {isPending ? " • updating..." : ""}
                     </div>
                 </div>
             </div>
@@ -139,11 +148,19 @@ export default function ExpenseClient({
                 <DataTable
                     columns={columns}
                     data={initialData}
-                    emptyMessage="Chưa có khoản chi phù hợp"
+                    emptyMessage="No matching expenses found"
                     pagination={initialPagination}
                     onRowClick={setSelectedExpense}
                 />
             </div>
+
+            <NewExpenseForm
+                open={createOpen}
+                onOpenChange={setCreateOpen}
+                groups={groups}
+                currentMemberId={currentMemberId}
+                initialGroupId={initialGroupId}
+            />
 
             <ExpenseDetailDialog
                 expense={selectedExpense}
@@ -164,12 +181,12 @@ export default function ExpenseClient({
                 }}
                 onConfirm={handleDelete}
                 loading={isPending}
-                title="Xóa khoản chi"
+                title="Delete expense"
                 description={
                     deleteTarget ? (
                         <>
-                            Khoản <strong>{deleteTarget.title}</strong> sẽ bị
-                            xóa khỏi bảng chi tiêu.
+                            <strong>{deleteTarget.title}</strong> will be removed
+                            from the expense table.
                         </>
                     ) : undefined
                 }

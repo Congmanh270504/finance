@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Plus, Search } from "lucide-react";
+import { ArrowUpRight, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import DeleteDialog from "@/components/delete-dialog";
 import { GroupedAccordionTable } from "@/components/grouped-accordion-table";
@@ -17,6 +18,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import {
+    assignExistingMembersToGroupsAction,
     createMemberAction,
     deleteMemberAction,
     updateMemberAction,
@@ -24,6 +26,7 @@ import {
 import { createMemberColumns } from "@/features/members/components/columns";
 import { MemberFormSheet } from "@/features/members/components/MemberFormSheet";
 import type {
+    AssignExistingMembersInput,
     CreateMemberInput,
     UpdateMemberInput,
 } from "@/features/members/schema";
@@ -123,6 +126,20 @@ export function MembersManagementPanel({
                 .map((group) => ({
                     key: group.id,
                     label: `${group.name} (${group.currency})`,
+                    action: (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            className="border-sky-300/80 bg-white/90"
+                        >
+                            <Link href={`/groups/${group.id}`}>
+                                Group details
+                                <ArrowUpRight className="size-4" />
+                            </Link>
+                        </Button>
+                    ),
                     items: filteredMembers.filter((member) =>
                         member.linkedGroupIds.includes(group.id),
                     ),
@@ -150,18 +167,72 @@ export function MembersManagementPanel({
     }
 
     async function handleSubmitMember(
-        values: CreateMemberInput | UpdateMemberInput,
+        values:
+            | CreateMemberInput
+            | UpdateMemberInput
+            | AssignExistingMembersInput,
     ) {
         setSubmittingMember(true);
 
         try {
-            if ("id" in values) {
+            if ("userIds" in values) {
+                if (isDemo) {
+                    const selectedSet = new Set(values.userIds);
+                    onMembersChange(
+                        data.members.map((member) => {
+                            if (!selectedSet.has(member.id)) {
+                                return member;
+                            }
+
+                            const nextLinkedGroupIds = Array.from(
+                                new Set([
+                                    ...member.linkedGroupIds,
+                                    ...values.linkedGroupIds,
+                                ]),
+                            );
+                            const nextLinkedGroupNames = data.groups
+                                .filter((group) =>
+                                    nextLinkedGroupIds.includes(group.id),
+                                )
+                                .map((group) => group.name);
+
+                            return {
+                                ...member,
+                                linkedGroupIds: nextLinkedGroupIds,
+                                linkedGroupNames: nextLinkedGroupNames,
+                                linkedGroupLabel:
+                                    nextLinkedGroupNames.length > 0
+                                        ? nextLinkedGroupNames.join(", ")
+                                        : "No groups assigned",
+                            };
+                        }),
+                    );
+                } else {
+                    const result =
+                        await assignExistingMembersToGroupsAction(values);
+                    if (!result.success || !result.data) {
+                        throw new Error(
+                            result.error ?? "Unable to assign users to groups",
+                        );
+                    }
+
+                    const updatedMap = new Map(
+                        result.data.map((member) => [member.id, member]),
+                    );
+                    onMembersChange(
+                        data.members.map((member) =>
+                            updatedMap.get(member.id) ?? member,
+                        ),
+                    );
+                    router.refresh();
+                }
+            } else if ("id" in values) {
                 if (isDemo) {
                     const currentMember = data.members.find(
                         (member) => member.id === values.id,
                     );
                     if (!currentMember) {
-                        throw new Error("Khong tim thay member de cap nhat");
+                        throw new Error("Member not found for update");
                     }
 
                     const nextLinkedGroupNames = data.groups
@@ -182,7 +253,7 @@ export function MembersManagementPanel({
                                       linkedGroupLabel:
                                           nextLinkedGroupNames.length > 0
                                               ? nextLinkedGroupNames.join(", ")
-                                              : "Chua co group",
+                                              : "No groups assigned",
                                   }
                                 : member,
                         ),
@@ -191,11 +262,11 @@ export function MembersManagementPanel({
                     const result = await updateMemberAction(values);
                     if (!result.success || !result.data) {
                         throw new Error(
-                            result.error ?? "Khong the cap nhat member",
+                            result.error ?? "Unable to update member",
                         );
                     }
-                    const updatedMember = result.data;
 
+                    const updatedMember = result.data;
                     onMembersChange(
                         data.members.map((member) =>
                             member.id === updatedMember.id
@@ -214,7 +285,18 @@ export function MembersManagementPanel({
                     id: buildDemoId("demo-member"),
                     name: values.name,
                     email: values.email,
+                    passwordHash: null,
                     imgUrl: values.imgUrl || null,
+                    username: null,
+                    accountTagline: null,
+                    bio: null,
+                    pronouns: null,
+                    profileUrl: null,
+                    company: null,
+                    location: null,
+                    avatarTone: null,
+                    socialLinks: null,
+                    profileHighlights: null,
                     linkedGroupIds: values.linkedGroupIds,
                     linkedGroupNames,
                     isActive: values.isActive,
@@ -223,7 +305,7 @@ export function MembersManagementPanel({
                     linkedGroupLabel:
                         linkedGroupNames.length > 0
                             ? linkedGroupNames.join(", ")
-                            : "Chua co group",
+                            : "No groups assigned",
                     netAmount: 0,
                     oweAmount: 0,
                     receiveAmount: 0,
@@ -234,7 +316,7 @@ export function MembersManagementPanel({
             } else {
                 const result = await createMemberAction(values);
                 if (!result.success || !result.data) {
-                    throw new Error(result.error ?? "Khong the tao member");
+                    throw new Error(result.error ?? "Unable to create member");
                 }
 
                 onMembersChange([result.data, ...data.members]);
@@ -243,11 +325,11 @@ export function MembersManagementPanel({
 
             setMemberSheetOpen(false);
             setSelectedMember(null);
-            toast.success("Da luu member");
+            toast.success("Member saved");
         } catch (error) {
-            toast.error("Luu member that bai", {
+            toast.error("Failed to save member", {
                 description:
-                    error instanceof Error ? error.message : "Vui long thu lai",
+                    error instanceof Error ? error.message : "Please try again.",
             });
         } finally {
             setSubmittingMember(false);
@@ -269,7 +351,7 @@ export function MembersManagementPanel({
             } else {
                 const result = await deleteMemberAction(deleteTarget.id);
                 if (!result.success) {
-                    throw new Error(result.error ?? "Khong the xoa member");
+                    throw new Error(result.error ?? "Unable to delete member");
                 }
 
                 onMembersChange(
@@ -281,11 +363,11 @@ export function MembersManagementPanel({
             }
 
             setDeleteTarget(null);
-            toast.success("Da xoa member");
+            toast.success("Member deleted");
         } catch (error) {
-            toast.error("Xoa member that bai", {
+            toast.error("Failed to delete member", {
                 description:
-                    error instanceof Error ? error.message : "Vui long thu lai",
+                    error instanceof Error ? error.message : "Please try again.",
             });
         } finally {
             setDeletingMemberId(null);
@@ -315,11 +397,11 @@ export function MembersManagementPanel({
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                             <CardTitle className="text-base">
-                                Member grouped table
+                                Members by group
                             </CardTitle>
                             <p className="text-sm text-muted-foreground">
-                                Danh sach member duoc nhom theo group va CRUD
-                                truc tiep tren cung man hinh.
+                                Browse members grouped by team and manage them
+                                directly from one screen.
                             </p>
                         </div>
                         <Button
@@ -329,7 +411,7 @@ export function MembersManagementPanel({
                             disabled={data.groups.length === 0}
                         >
                             <Plus className="size-4" />
-                            Create Member
+                            Add Member
                         </Button>
                     </div>
 
@@ -343,7 +425,7 @@ export function MembersManagementPanel({
                                         "member-q": event.target.value,
                                     })
                                 }
-                                placeholder="Tim theo ten, email, group..."
+                                placeholder="Search by name, email, or group..."
                                 className="pl-9"
                             />
                         </div>
@@ -356,11 +438,11 @@ export function MembersManagementPanel({
                                 }
                             >
                                 <SelectTrigger className="min-w-44">
-                                    <SelectValue placeholder="Tat ca group" />
+                                    <SelectValue placeholder="All groups" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">
-                                        Tat ca group
+                                        All groups
                                     </SelectItem>
                                     {data.groups.map((group) => (
                                         <SelectItem
@@ -384,13 +466,13 @@ export function MembersManagementPanel({
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">
-                                        Tat ca trang thai
+                                        All statuses
                                     </SelectItem>
                                     <SelectItem value="active">
-                                        Dang hoat dong
+                                        Active
                                     </SelectItem>
                                     <SelectItem value="inactive">
-                                        Tam ngung
+                                        Inactive
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
@@ -404,7 +486,7 @@ export function MembersManagementPanel({
                         groups={groupedSections}
                         onRowClick={openViewMember}
                         activeRowId={selectedMember?.id}
-                        emptyMessage="Khong co member phu hop voi bo loc hien tai"
+                        emptyMessage="No members match the current filters."
                     />
                 </CardContent>
             </Card>
@@ -414,6 +496,14 @@ export function MembersManagementPanel({
                 onOpenChange={setMemberSheetOpen}
                 mode={memberFormMode}
                 groups={data.groups}
+                availableUsers={data.members.map((member) => ({
+                    id: member.id,
+                    name: member.name,
+                    email: member.email,
+                    imgUrl: member.imgUrl,
+                    isActive: member.isActive,
+                    linkedGroupIds: member.linkedGroupIds,
+                }))}
                 initialMember={selectedMember}
                 defaultGroupId={defaultGroupId}
                 submitting={submittingMember}
@@ -427,11 +517,11 @@ export function MembersManagementPanel({
                 }}
                 onConfirm={handleDeleteMember}
                 loading={deletingMemberId !== null}
-                title="Xoa member"
+                title="Delete member"
                 description={
                     deleteTarget
-                        ? `Ban co chac muon xoa ${deleteTarget.name}?`
-                        : "Ban co chac muon xoa member nay?"
+                        ? `Are you sure you want to delete ${deleteTarget.name}?`
+                        : "Are you sure you want to delete this member?"
                 }
             />
         </div>

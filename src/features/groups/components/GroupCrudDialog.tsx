@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { DragDropProvider, type DragEndEvent } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { toast } from "sonner";
@@ -184,7 +185,17 @@ function GroupSortableRow({
                         className="min-w-[220px]"
                     />
                 ) : (
-                    <div className="font-medium">{row.name}</div>
+                    <div className="space-y-1">
+                        <Link
+                            href={`/groups/${row.id}`}
+                            className="font-medium underline underline-offset-4"
+                        >
+                            {row.name}
+                        </Link>
+                        <p className="text-xs text-muted-foreground">
+                            Mo trang chi tiet cong no cua group
+                        </p>
+                    </div>
                 )}
             </TableCell>
             <TableCell className="text-center">

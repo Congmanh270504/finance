@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, Eye, Pencil, Trash2 } from "lucide-react";
+import UserAvatar from "@/components/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +15,6 @@ import type {
     MemberGroupItem,
     MemberManagementItem,
 } from "@/features/members/types";
-import UserAvatar from "@/components/user-avatar";
 
 type MemberColumnsArgs = {
     groups: MemberGroupItem[];
@@ -136,10 +136,10 @@ export function createMemberColumns({
         {
             accessorKey: "netAmount",
             header: ({ column }) => (
-                <SortableHeader label="Cong no rong" column={column} />
+                <SortableHeader label="Balance Ledger" column={column} />
             ),
             cell: ({ row }) => (
-                <div className="space-y-0.5 text-right">
+                <div className="space-y-0.5 text-center">
                     <div
                         className={
                             row.original.netAmount >= 0
@@ -151,7 +151,7 @@ export function createMemberColumns({
                         {formatVND(row.original.netAmount)}
                     </div>
                     <div className="text-[11px] text-muted-foreground">
-                        {row.original.ledgerCount} giao dich no
+                        {row.original.ledgerCount} ledger entries
                     </div>
                 </div>
             ),
@@ -180,7 +180,7 @@ export function createMemberColumns({
         },
         {
             id: "actions",
-            header: () => <div className="text-right">Action</div>,
+            header: () => <div className="text-right">Actions</div>,
             enableSorting: false,
             cell: ({ row }) => (
                 <div
@@ -189,19 +189,19 @@ export function createMemberColumns({
                     onClick={(event) => event.stopPropagation()}
                 >
                     <ActionIconButton
-                        label="Xem"
+                        label="View"
                         onClick={() => onView(row.original)}
                     >
                         <Eye className="size-4 text-sky-600" />
                     </ActionIconButton>
                     <ActionIconButton
-                        label="Sua"
+                        label="Edit"
                         onClick={() => onStartEdit(row.original)}
                     >
                         <Pencil className="size-4 text-amber-600" />
                     </ActionIconButton>
                     <ActionIconButton
-                        label="Xoa"
+                        label="Delete"
                         onClick={() => onDelete(row.original)}
                         variant="outline"
                     >

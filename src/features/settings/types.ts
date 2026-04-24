@@ -40,6 +40,7 @@ export type SettingsProfile = {
   displayName: string;
   username: string;
   accountTagline: string;
+  avatarUrl?: string | null;
   email: string;
   emailHint: string;
   bio: string;
