@@ -106,6 +106,51 @@ type OverviewCardProps = {
     className?: string;
 };
 
+type ImageBackgroundCardProps = Omit<React.ComponentProps<"div">, "title"> & {
+    backgroundImage: string;
+    title: React.ReactNode;
+    value: React.ReactNode;
+    description?: React.ReactNode;
+};
+
+function ImageBackgroundCard({
+    backgroundImage,
+    title,
+    value,
+    description,
+    className,
+    style,
+    ...props
+}: ImageBackgroundCardProps) {
+    return (
+        <Card
+            className={cn(
+                "relative h-36 overflow-hidden bg-[length:100%_100%] bg-center bg-no-repeat py-0 shadow-sm md:h-40",
+                className,
+            )}
+            style={{
+                backgroundImage: `url("${backgroundImage}")`,
+                ...style,
+            }}
+            {...props}
+        >
+            <div className="absolute inset-x-0 top-0 z-10 p-4">
+                <p className="text-sm font-medium text-foreground/75">
+                    {title}
+                </p>
+                <div className="text-2xl font-semibold leading-tight text-foreground">
+                    {value}
+                </div>
+                {description ? (
+                    <p className="text-xs text-muted-foreground">
+                        {description}
+                    </p>
+                ) : null}
+            </div>
+        </Card>
+    );
+}
+
 function OverviewCard({ data, className }: OverviewCardProps) {
     const Icon = data.icon;
 
@@ -169,6 +214,7 @@ export {
     CardAction,
     CardDescription,
     CardContent,
+    ImageBackgroundCard,
     OverviewCard,
 };
 export type { OverviewCardData };

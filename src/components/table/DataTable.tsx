@@ -2,14 +2,19 @@
 
 import {
     ColumnDef,
+    FilterFn,
     flexRender,
     getCoreRowModel,
+    getFilteredRowModel,
     getSortedRowModel,
     SortingState,
     useReactTable,
 } from "@tanstack/react-table";
+import * as React from "react";
 import { type MouseEvent, useState } from "react";
 
+import Pagination from "@/components/table/Pagination";
+import StatePagination from "@/components/table/StatePagination";
 import {
     Table,
     TableBody,
@@ -18,15 +23,23 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import Pagination from "@/components/pagination/Pagination";
-import StatePagination from "@/components/pagination/StatePagination";
 import { cn } from "@/lib/utils";
+import { SearchIcon } from "lucide-react";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { DataTableViewOptions } from "./DataTableViewOptions";
 
 type PaginationConfig = {
     total: number;
     page: number;
     limit: number;
     onPageChange?: (page: number) => void;
+};
+
+type DataTableAction = Omit<React.ComponentProps<typeof Button>, "children"> & {
+    label: React.ReactNode;
+    icon?: React.ReactNode;
+    key?: React.Key;
 };
 
 interface DataTableProps<TData, TValue> {
@@ -41,12 +54,40 @@ interface DataTableProps<TData, TValue> {
     stickyColumns?: string[];
     stickyHeaderClassName?: string;
     stickyCellClassName?: string;
+    enableSearch?: boolean;
+    searchPlaceholder?: string;
+    actions?: DataTableAction[];
 }
+
+const normalizeSearchValue = (value: unknown): string => {
+    if (value === null || value === undefined) return "";
+
+    if (value instanceof Date) {
+        return value.toISOString();
+    }
+
+    if (Array.isArray(value)) {
+        return value.map(normalizeSearchValue).join(" ");
+    }
+
+    if (typeof value === "object") {
+        return Object.values(value)
+            .map(normalizeSearchValue)
+            .join(" ");
+    }
+
+    return String(value)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D")
+        .toLowerCase();
+};
 
 export function DataTable<TData, TValue>({
     columns,
     data,
-    emptyMessage = "Không có dữ liệu",
+    emptyMessage = "No data",
     meta,
     pagination,
     onRowClick,
@@ -55,17 +96,36 @@ export function DataTable<TData, TValue>({
     stickyColumns,
     stickyHeaderClassName,
     stickyCellClassName,
+    enableSearch = true,
+    searchPlaceholder = "Search...",
+    actions = [],
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([]);
+    const [globalFilter, setGlobalFilter] = useState("");
+
+    const globalFilterFn = React.useCallback<FilterFn<TData>>(
+        (row, _columnId, filterValue) => {
+            const query = normalizeSearchValue(filterValue);
+
+            if (!query) return true;
+
+            return normalizeSearchValue(row.original).includes(query);
+        },
+        [],
+    );
 
     const table = useReactTable({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
         getSortedRowModel: getSortedRowModel(),
         onSortingChange: setSorting,
+        onGlobalFilterChange: setGlobalFilter,
+        globalFilterFn,
         state: {
             sorting,
+            globalFilter,
         },
         meta,
         getRowId,
@@ -81,9 +141,7 @@ export function DataTable<TData, TValue>({
     const limit = paginationConfig?.limit ?? 0;
     const totalPages = limit > 0 ? Math.ceil(total / limit) : 0;
 
-    const shouldIgnoreRowClick = (
-        event: MouseEvent<HTMLTableRowElement>,
-    ) => {
+    const shouldIgnoreRowClick = (event: MouseEvent<HTMLTableRowElement>) => {
         const target = event.target as HTMLElement;
         return !!target.closest(
             "button, input, textarea, a, svg, [role='checkbox'], [role='menuitem'], [data-no-row-open='true'], [data-radix-collection-item]",
@@ -92,6 +150,37 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className="w-full overflow-x-auto">
+            <div className="flex flex-col gap-2 p-2 md:flex-row md:items-center md:justify-between">
+                {enableSearch ? (
+                    <div className="relative w-full max-w-md flex-1">
+                        <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={globalFilter}
+                            placeholder={searchPlaceholder}
+                            className="pl-9"
+                            onChange={(event) =>
+                                table.setGlobalFilter(event.target.value)
+                            }
+                        />
+                    </div>
+                ) : (
+                    <div />
+                )}
+                <div className="flex flex-wrap items-center gap-2">
+                    {actions.map(({ label, icon, key, ...buttonProps }) => (
+                        <Button
+                            key={key ?? String(label)}
+                            type="button"
+                            {...buttonProps}
+                        >
+                            {icon}
+                            {label}
+                        </Button>
+                    ))}
+                    <DataTableViewOptions table={table} />
+                </div>
+            </div>
+
             <Table className="min-w-full">
                 <TableHeader className="sticky top-0 z-20 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm bg-linear-to-r from-blue-50 to-yellow-50">
                     {table.getHeaderGroups().map((headerGroup) => (
@@ -182,7 +271,6 @@ export function DataTable<TData, TValue>({
                     )}
                 </TableBody>
             </Table>
-
             {paginationConfig && totalPages > 0 ? (
                 <div className="mt-3 px-3 pb-3">
                     {paginationConfig.onPageChange ? (

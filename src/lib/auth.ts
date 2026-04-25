@@ -33,6 +33,30 @@ async function findUserByEmail(email: string) {
     });
 }
 
+async function findUserById(id: string) {
+    return prisma.user.findUnique({
+        where: {
+            id,
+        },
+        include: {
+            User_Groups: {
+                select: {
+                    groupId: true,
+                    Group: {
+                        select: {
+                            name: true,
+                            currency: true,
+                        },
+                    },
+                },
+                orderBy: {
+                    createdAt: "asc",
+                },
+            },
+        },
+    });
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
     session: {
         strategy: "jwt",
@@ -104,11 +128,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 export async function getCurrentUser() {
     const session = await auth();
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id && !session?.user?.email) {
         return null;
     }
 
-    return findUserByEmail(session.user.email);
+    if (session.user.id) {
+        return findUserById(session.user.id);
+    }
+
+    return findUserByEmail(session.user.email ?? "");
 }
 
 export async function getCurrentUserContext() {

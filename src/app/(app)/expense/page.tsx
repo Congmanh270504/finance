@@ -14,14 +14,13 @@ export const revalidate = 0;
 export default async function ExpensePage({
     searchParams,
 }: {
-    searchParams: Promise<{ query?: string; page?: string }>;
+    searchParams: Promise<{ page?: string }>;
 }) {
     const params = await searchParams;
     const page = Number(params.page) || 1;
     const context = await getCurrentUserContext();
     const [result, groupsResult] = await Promise.all([
         getExpenses({
-            query: params.query,
             page,
             limit: 20,
         }),
@@ -44,7 +43,6 @@ export default async function ExpensePage({
         <ExpenseClient
             initialData={result.items}
             initialPagination={result.pagination}
-            initialQuery={result.query}
             source={result.source}
             groups={groupsResult.groups}
             currentMemberId={currentMemberId}

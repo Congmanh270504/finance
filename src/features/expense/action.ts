@@ -1,6 +1,10 @@
 "use server";
 
-import { BalanceLedgerHistoryType, type Prisma } from "@prisma/client";
+import {
+    BalanceLedgerHistoryType,
+    NotificationType,
+    type Prisma,
+} from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import {
     expenseCreateSchema,
@@ -74,6 +78,10 @@ function mapExpenseRow(expense: ExpenseWithRelations): ExpenseRow {
         participantNames: shares.map((share) => share.memberName),
         shares,
     };
+}
+
+function formatNotificationAmount(amount: number) {
+    return new Intl.NumberFormat("vi-VN").format(amount) + " VND";
 }
 
 function revalidateExpensePaths() {
@@ -179,6 +187,38 @@ async function appendLedgerHistory(
     });
 
     return entries.length;
+}
+
+async function createExpenseNotifications(
+    tx: Prisma.TransactionClient,
+    expense: ExpenseWithRelations,
+) {
+    const recipientIds = Array.from(
+        new Set([
+            expense.paidByMemberId,
+            ...expense.splitShares.map((share) => share.memberId),
+        ]),
+    );
+
+    if (recipientIds.length === 0) {
+        return 0;
+    }
+
+    const result = await tx.notification.createMany({
+        data: recipientIds.map((userId) => ({
+            userId,
+            groupId: expense.groupId,
+            expenseId: expense.id,
+            type: NotificationType.EXPENSE_CREATED,
+            title: "Expense moi",
+            message: `${expense.paidBy.name} da tra ${formatNotificationAmount(
+                expense.amount,
+            )} cho "${expense.title}" trong ${expense.group.name}.`,
+            href: "/expense",
+        })),
+    });
+
+    return result.count;
 }
 
 async function rebuildGroupBalanceLedger(
@@ -471,6 +511,7 @@ export async function createExpenseAction(
                 tx,
                 ledgerHistoryEntries,
             );
+            await createExpenseNotifications(tx, expense);
             const ledgerUpdates = await rebuildGroupBalanceLedger(
                 tx,
                 expense.groupId,

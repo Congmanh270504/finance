@@ -20,22 +20,43 @@ export default function ImageUpload({
     folder = "finance/members",
     disabled = false,
 }: ImageUploadProps) {
-    const [preview, setPreview] = useState<string | null>(value || null);
+    const [localPreview, setLocalPreview] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const objectUrlRef = useRef<string | null>(null);
+    const preview = localPreview ?? value ?? null;
 
     useEffect(() => {
-        setPreview(value || null);
-    }, [value]);
+        return () => {
+            if (objectUrlRef.current) {
+                URL.revokeObjectURL(objectUrlRef.current);
+            }
+        };
+    }, []);
+
+    function clearObjectPreview() {
+        if (objectUrlRef.current) {
+            URL.revokeObjectURL(objectUrlRef.current);
+            objectUrlRef.current = null;
+        }
+
+        setLocalPreview(null);
+    }
+
+    function setObjectPreview(url: string) {
+        clearObjectPreview();
+        objectUrlRef.current = url;
+        setLocalPreview(url);
+    }
 
     const { upload, uploading, error } = useFileUpload({
         folder,
         type: "image",
         onSuccess: (file) => {
-            setPreview(file.url);
+            clearObjectPreview();
             onChange(file.url);
         },
         onError: () => {
-            setPreview(value || null);
+            clearObjectPreview();
             onChange("");
         },
     });
@@ -47,7 +68,7 @@ export default function ImageUpload({
         if (!file) return;
 
         const objectUrl = URL.createObjectURL(file);
-        setPreview(objectUrl);
+        setObjectPreview(objectUrl);
 
         await upload(file);
 
@@ -58,7 +79,7 @@ export default function ImageUpload({
 
     const handleRemove = (event: React.MouseEvent) => {
         event.stopPropagation();
-        setPreview(null);
+        clearObjectPreview();
         onChange("");
         if (inputRef.current) {
             inputRef.current.value = "";

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
-import { DataTable } from "@/components/data-table";
+import { DataTable } from "@/components/table/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -358,6 +358,7 @@ export function GroupDetailClient({
                             emptyMessage="No matching balance history found"
                             pagination={detail.pagination}
                             onRowClick={setSelectedEntry}
+                            enableSearch={false}
                         />
                     </div>
 

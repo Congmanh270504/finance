@@ -19,6 +19,10 @@ enum BalanceLedgerHistoryType {
   MANUAL_ADJUSTMENT
 }
 
+enum NotificationType {
+  EXPENSE_CREATED
+}
+
 model Group {
   id                     String                 @id @default(auto()) @map("_id") @db.ObjectId
   name                   String
@@ -31,6 +35,7 @@ model Group {
   Settlements            Settlement[]
   BalanceLedgers         BalanceLedger[]
   BalanceLedgerHistories BalanceLedgerHistory[]
+  Notifications          Notification[]
 
   @@index([createdAt(sort: Desc)])
   @@index([order])
@@ -78,6 +83,7 @@ model User {
   credits              BalanceLedger[]        @relation("LedgerTo")
   ledgerHistoryDebts   BalanceLedgerHistory[] @relation("LedgerHistoryFrom")
   ledgerHistoryCredits BalanceLedgerHistory[] @relation("LedgerHistoryTo")
+  notifications        Notification[]          @relation("UserNotifications")
 
   @@index([isActive])
 }
@@ -98,9 +104,31 @@ model Expense {
   splitShares            SplitShare[]
   ledgerEntries          BalanceLedger[]
   balanceLedgerHistories BalanceLedgerHistory[] @relation("BalanceLedgerHistoryExpense")
+  notifications          Notification[]          @relation("ExpenseNotifications")
 
   @@index([groupId, occurredAt(sort: Desc)])
   @@index([paidByMemberId, occurredAt(sort: Desc)])
+}
+
+model Notification {
+  id        String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String           @db.ObjectId
+  groupId   String?          @db.ObjectId
+  expenseId String?          @db.ObjectId
+  type      NotificationType @default(EXPENSE_CREATED)
+  title     String
+  message   String
+  href      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  group     Group?           @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  expense   Expense?         @relation("ExpenseNotifications", fields: [expenseId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([expenseId])
 }
 
 model SplitShare {

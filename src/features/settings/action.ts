@@ -1,7 +1,14 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
 import { settingsFixtures } from "@/features/settings/mock-fixtures";
-import { settingsPageDataSchema } from "@/features/settings/schema";
+import {
+  settingsPageDataSchema,
+  settingsProfileUpdateSchema,
+} from "@/features/settings/schema";
 import type { SettingsPageData } from "@/features/settings/types";
 import { getCurrentUserContext } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 
 type SocialLink = SettingsPageData["profile"]["socialLinks"][number];
 type SettingHighlight = SettingsPageData["profile"]["highlights"][number];
@@ -101,6 +108,12 @@ function buildEmailHint(email: string) {
   return `Email dang duoc lien ket voi tai khoan cua ban la ${email}.`;
 }
 
+export type SettingsActionResponse<T = undefined> = {
+  success: boolean;
+  error?: string;
+  data?: T;
+};
+
 export async function fetchSettingsPageData(): Promise<{
   data: SettingsPageData;
   isDemo: boolean;
@@ -167,5 +180,68 @@ export async function fetchSettingsPageData(): Promise<{
     return { data, isDemo: false };
   } catch {
     return { data: fallback, isDemo: true };
+  }
+}
+
+export async function updateSettingsProfileAction(
+  input: unknown,
+): Promise<SettingsActionResponse<SettingsPageData["profile"]>> {
+  const parsed = settingsProfileUpdateSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message ?? "Invalid profile data",
+    };
+  }
+
+  const context = await getCurrentUserContext();
+
+  if (!context) {
+    return {
+      success: false,
+      error: "Not authenticated",
+    };
+  }
+
+  try {
+    await prisma.user.update({
+      where: {
+        id: context.user.id,
+      },
+      data: {
+        name: parsed.data.displayName.trim(),
+        email: parsed.data.email.trim().toLowerCase(),
+        username: normalizeText(parsed.data.username),
+        accountTagline: normalizeText(parsed.data.accountTagline),
+        imgUrl: normalizeText(parsed.data.avatarUrl),
+        bio: normalizeText(parsed.data.bio),
+        pronouns: normalizeText(parsed.data.pronouns),
+        profileUrl: normalizeText(parsed.data.url),
+        company: normalizeText(parsed.data.company),
+        location: normalizeText(parsed.data.location),
+        avatarTone: normalizeText(parsed.data.avatarTone),
+        socialLinks: parsed.data.socialLinks.map((link) => ({
+          label: link.label.trim(),
+          value: link.value?.trim() ?? "",
+        })),
+      },
+    });
+
+    const { data } = await fetchSettingsPageData();
+
+    revalidatePath("/");
+    revalidatePath("/settings");
+
+    return {
+      success: true,
+      data: data.profile,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Unable to update profile",
+    };
   }
 }

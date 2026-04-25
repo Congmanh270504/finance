@@ -3,8 +3,13 @@
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
-import { DataTable } from "@/components/data-table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DataTable } from "@/components/table/DataTable";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    ImageBackgroundCard,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
     Select,
@@ -47,7 +52,7 @@ export function MyLedgerHistoryClient({
     }
 
     return (
-        <div className="space-y-4 px-4 pb-6 pt-4">
+        <div className="space-y-4 ">
             <div>
                 <h1 className="text-lg font-bold">Lịch sử công nợ của tôi</h1>
                 <p className="text-xs text-muted-foreground">
@@ -57,49 +62,34 @@ export function MyLedgerHistoryClient({
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-                <Card className="py-0">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">Tăng công nợ</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-lg font-semibold text-emerald-600">
-                        +{formatCurrency(data.summary.increaseAmount)}
-                    </CardContent>
-                </Card>
-                <Card className="py-0">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">Giảm công nợ</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-lg font-semibold text-rose-600">
-                        -{formatCurrency(data.summary.decreaseAmount)}
-                    </CardContent>
-                </Card>
-                <Card className="py-0">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">Ròng</CardTitle>
-                    </CardHeader>
-                    <CardContent
-                        className={`text-lg font-semibold ${
-                            data.summary.netAmount >= 0
-                                ? "text-emerald-600"
-                                : "text-rose-600"
-                        }`}
-                    >
-                        {data.summary.netAmount >= 0 ? "+" : "-"}
-                        {formatCurrency(Math.abs(data.summary.netAmount))}
-                    </CardContent>
-                </Card>
+                <ImageBackgroundCard
+                    backgroundImage="/bbbb.png"
+                    title={
+                        "\u0054\u0103\u006e\u0067\u0020\u0063\u00f4\u006e\u0067\u0020\u006e\u1ee3"
+                    }
+                    value={`+${formatCurrency(data.summary.increaseAmount)}`}
+                />
+                <ImageBackgroundCard
+                    backgroundImage="/bbbb.png"
+                    title={
+                        "\u0047\u0069\u1ea3\u006d\u0020\u0063\u00f4\u006e\u0067\u0020\u006e\u1ee3"
+                    }
+                    value={`-${formatCurrency(data.summary.decreaseAmount)}`}
+                />
+                <ImageBackgroundCard
+                    backgroundImage="/bbbb.png"
+                    title={"Ròng"}
+                    value={`${data.summary.netAmount >= 0 ? "+" : "-"} ${formatCurrency(data.summary.netAmount)}`}
+                />
             </div>
 
             <Card className="py-0">
                 <CardHeader className="space-y-4">
-                    <CardTitle className="text-base">
-                        Nhật ký biến động
-                    </CardTitle>
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                        <div className="relative flex-1">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center mt-2">
+                        <div className="relative flex-1 max-w-60">
                             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
-                                className="pl-9"
+                                className="p-4.5 pl-9"
                                 value={searchParams.get("query") ?? ""}
                                 onChange={(event) =>
                                     replaceParams({
@@ -115,7 +105,7 @@ export function MyLedgerHistoryClient({
                                 replaceParams({ groupId: value })
                             }
                         >
-                            <SelectTrigger className="min-w-52">
+                            <SelectTrigger className="w-fit">
                                 <SelectValue placeholder="All groups" />
                             </SelectTrigger>
                             <SelectContent>
@@ -135,6 +125,7 @@ export function MyLedgerHistoryClient({
                         data={data.items}
                         emptyMessage="Chưa có lịch sử công nợ phù hợp."
                         pagination={data.pagination}
+                        enableSearch={false}
                     />
                 </CardContent>
             </Card>

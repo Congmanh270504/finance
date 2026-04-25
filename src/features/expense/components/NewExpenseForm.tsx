@@ -519,6 +519,7 @@ export function NewExpenseForm({
                 )}`,
             });
 
+            window.dispatchEvent(new Event("notifications:refresh"));
             reset(createDefaultValues(groups, values.groupId));
             setMembers([]);
             router.refresh();

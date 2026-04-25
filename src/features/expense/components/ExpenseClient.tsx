@@ -1,14 +1,12 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { PlusIcon, SearchIcon, TablePropertiesIcon } from "lucide-react";
+import { PlusIcon, TablePropertiesIcon } from "lucide-react";
 import DeleteDialog from "@/components/delete-dialog";
-import { DataTable } from "@/components/data-table";
+import { DataTable } from "@/components/table/DataTable";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { deleteExpenseAction } from "@/features/expense/action";
 import { ExpenseDetailDialog } from "@/features/expense/components/ExpenseDetailDialog";
 import { NewExpenseForm } from "@/features/expense/components/NewExpenseForm";
@@ -22,7 +20,6 @@ import type {
 export default function ExpenseClient({
     initialData,
     initialPagination,
-    initialQuery,
     source,
     groups,
     currentMemberId,
@@ -30,14 +27,12 @@ export default function ExpenseClient({
 }: {
     initialData: ExpenseRow[];
     initialPagination: ExpenseListPagination;
-    initialQuery?: string;
     source: "database" | "demo";
     groups: ExpenseFormGroup[];
     currentMemberId: string;
     initialGroupId: string;
 }) {
     const router = useRouter();
-    const searchParams = useSearchParams();
     const [createOpen, setCreateOpen] = useState(false);
     const [selectedExpense, setSelectedExpense] = useState<ExpenseRow | null>(
         null,
@@ -54,26 +49,6 @@ export default function ExpenseClient({
         },
         onDelete: setDeleteTarget,
     });
-
-    const updateQueryParam = (query: string) => {
-        const params = new URLSearchParams(searchParams.toString());
-
-        if (query) {
-            params.set("query", query);
-        } else {
-            params.delete("query");
-        }
-
-        params.delete("page");
-
-        const nextUrl = params.toString()
-            ? `/expense?${params.toString()}`
-            : "/expense";
-
-        startTransition(() => {
-            router.replace(nextUrl);
-        });
-    };
 
     const handleDelete = () => {
         if (!deleteTarget) return;
@@ -106,9 +81,7 @@ export default function ExpenseClient({
                     <div>
                         <div className="flex items-center gap-2">
                             <TablePropertiesIcon className="size-5 text-primary" />
-                            <h1 className="text-lg font-bold">
-                                Expense Table
-                            </h1>
+                            <h1 className="text-lg font-bold">Expense Table</h1>
                             {source === "demo" ? (
                                 <Badge variant="warning">Demo data</Badge>
                             ) : null}
@@ -119,27 +92,9 @@ export default function ExpenseClient({
                         </p>
                     </div>
 
-                    <Button onClick={() => setCreateOpen(true)}>
-                        <PlusIcon className="size-4" />
-                        Add expense
-                    </Button>
-                </div>
-
-                <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                    <div className="relative max-w-md flex-1">
-                        <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            defaultValue={initialQuery}
-                            placeholder="Search by expense title or payer"
-                            className="pl-9"
-                            onChange={(event) =>
-                                updateQueryParam(event.target.value.trim())
-                            }
-                        />
-                    </div>
                     <div className="text-sm text-muted-foreground">
                         {initialPagination.total} expenses
-                        {isPending ? " • updating..." : ""}
+                        {isPending ? " - updating..." : ""}
                     </div>
                 </div>
             </div>
@@ -151,6 +106,14 @@ export default function ExpenseClient({
                     emptyMessage="No matching expenses found"
                     pagination={initialPagination}
                     onRowClick={setSelectedExpense}
+                    searchPlaceholder="Search by expense title or payer"
+                    actions={[
+                        {
+                            label: "Add expense",
+                            icon: <PlusIcon className="size-4" />,
+                            onClick: () => setCreateOpen(true),
+                        },
+                    ]}
                 />
             </div>
 
@@ -185,8 +148,8 @@ export default function ExpenseClient({
                 description={
                     deleteTarget ? (
                         <>
-                            <strong>{deleteTarget.title}</strong> will be removed
-                            from the expense table.
+                            <strong>{deleteTarget.title}</strong> will be
+                            removed from the expense table.
                         </>
                     ) : undefined
                 }

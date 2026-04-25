@@ -19,6 +19,7 @@ export function createMyLedgerHistoryColumns(): ColumnDef<MyLedgerHistoryItem>[]
                     onClick={() =>
                         column.toggleSorting(column.getIsSorted() === "asc")
                     }
+                    className="border-none"
                 >
                     Date
                     <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -35,6 +36,7 @@ export function createMyLedgerHistoryColumns(): ColumnDef<MyLedgerHistoryItem>[]
                     onClick={() =>
                         column.toggleSorting(column.getIsSorted() === "asc")
                     }
+                    className="border-none"
                 >
                     Group
                     <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -54,57 +56,75 @@ export function createMyLedgerHistoryColumns(): ColumnDef<MyLedgerHistoryItem>[]
         {
             accessorKey: "counterpartyName",
             header: ({ column }) => (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Counterparty
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
+                <div className="flex items-center justify-center">
+                    <Button
+                        variant="ghost"
+                        onClick={() =>
+                            column.toggleSorting(column.getIsSorted() === "asc")
+                        }
+                        className="border-none"
+                    >
+                        Counterparty
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
             ),
-            cell: ({ row }) => row.original.counterpartyName,
+            cell: ({ row }) => (
+                <div className="text-center">
+                    {row.original.counterpartyName}
+                </div>
+            ),
         },
         {
             accessorKey: "sourceLabel",
             header: ({ column }) => (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Source
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
+                <div className="flex items-center justify-center">
+                    <Button
+                        variant="ghost"
+                        onClick={() =>
+                            column.toggleSorting(column.getIsSorted() === "asc")
+                        }
+                        className="border-none"
+                    >
+                        Source
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
             ),
-            cell: ({ row }) => row.original.sourceLabel,
+            cell: ({ row }) => (
+                <div className="text-center">{row.original.sourceLabel}</div>
+            ),
         },
         {
             accessorKey: "signedAmount",
             header: ({ column }) => (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Change
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
+                <div className="flex items-center justify-center">
+                    <Button
+                        variant="ghost"
+                        onClick={() =>
+                            column.toggleSorting(column.getIsSorted() === "asc")
+                        }
+                        className="border-none"
+                    >
+                        Change
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
             ),
             cell: ({ row }) => (
-                <span
-                    className={
-                        row.original.direction === "increase"
-                            ? "font-semibold text-emerald-600"
-                            : "font-semibold text-rose-600"
-                    }
+                <div
+                    className={`
+                        ${
+                            row.original.direction === "increase"
+                                ? "font-semibold text-emerald-600"
+                                : "font-semibold text-rose-600"
+                        }
+                        text-center
+                        `}
                 >
                     {row.original.direction === "increase" ? "+" : "-"}
                     {formatCurrency(Math.abs(row.original.signedAmount))}
-                </span>
+                </div>
             ),
         },
     ];

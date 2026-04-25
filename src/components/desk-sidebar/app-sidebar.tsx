@@ -38,9 +38,9 @@ const data = {
             isActive: true,
             items: [
                 { title: "Overview", url: "/" },
-                { title: "Expense Table", url: "/expense" },
+                { title: "Expense", url: "/expense" },
+                { title: "Debt History", url: "/my-ledger-history" },
                 { title: "Expense History", url: "/history" },
-                { title: "My Debt History", url: "/my-ledger-history" },
                 { title: "Insights", url: "/insights" },
             ],
         },
