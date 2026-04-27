@@ -3,96 +3,205 @@
 import * as React from "react";
 import Link from "next/link";
 import {
-    PlusIcon,
     ArrowRightIcon,
-    TrendingUpIcon,
+    BarChart3Icon,
+    LayoutGridIcon,
+    ReceiptTextIcon,
     TrendingDownIcon,
+    TrendingUpIcon,
     WalletIcon,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { MemberAvatar } from "@/features/finance/components/shared/MemberAvatar";
-import { ExpenseCategoryIcon } from "@/features/finance/components/shared/expense-icon";
+import UserAvatar from "@/components/user-avatar";
+import { DashboardCashflowChart } from "@/features/dashboard/components/chart-mutiple";
 import type {
-    BalancesSummaryResponseV1,
-    ExpenseHistoryResponseV1,
-} from "@/features/finance/type";
+    DashboardLedgerItem,
+    DashboardOverviewData,
+    DashboardQuickAccessItem,
+} from "@/features/dashboard/types";
 
 function formatVND(amount: number) {
-    return new Intl.NumberFormat("vi-VN").format(amount) + " ₫";
+    return new Intl.NumberFormat("vi-VN").format(amount) + " VND";
+}
+
+function formatDate(value: string) {
+    return new Date(value).toLocaleDateString("vi-VN");
+}
+
+function getInitials(name: string) {
+    return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase();
+}
+
+function QuickAccessIcon({ item }: { item: DashboardQuickAccessItem }) {
+    if (item.kind === "group") {
+        return (
+            <UserAvatar
+                src={item.imgUrl ?? undefined}
+                alt={item.title}
+                fallback={getInitials(item.title)}
+                className="size-8"
+            />
+        );
+    }
+
+    if (item.url.includes("expense")) {
+        return <ReceiptTextIcon className="size-4" />;
+    }
+
+    if (item.url.includes("insights")) {
+        return <BarChart3Icon className="size-4" />;
+    }
+
+    return <LayoutGridIcon className="size-4" />;
+}
+
+function LedgerList({
+    title,
+    items,
+    emptyText,
+    variant,
+}: {
+    title: string;
+    items: DashboardLedgerItem[];
+    emptyText: string;
+    variant: "danger" | "success";
+}) {
+    const isDanger = variant === "danger";
+
+    return (
+        <div className="min-w-0">
+            <div className="mb-2 flex items-center justify-between">
+                <Badge
+                    variant="secondary"
+                    className="gap-1.5 border-emerald-600/40 bg-emerald-600/10 text-emerald-500 shadow-none hover:bg-emerald-600/10 dark:bg-emerald-600/20"
+                >
+                    {title}
+                </Badge>
+                <Badge variant={isDanger ? "destructive" : "success"}>
+                    {items.length}
+                </Badge>
+            </div>
+            {items.length === 0 ? (
+                <Card className="border border-primary/10 py-5 text-center text-sm text-muted-foreground glass">
+                    {emptyText}
+                </Card>
+            ) : (
+                <Card className="divide-y divide-border/50 border border-primary/10 py-2 glass hover-lift">
+                    {items.map((entry) => (
+                        <Link
+                            key={entry.ledgerId}
+                            href={`/groups/${entry.groupId}`}
+                            className="flex items-center gap-3 px-4 py-2.5 transition-colors duration-150 hover:bg-muted/30"
+                        >
+                            {entry.counterpartyImgUrl && (
+                                <UserAvatar
+                                    src={entry.counterpartyImgUrl ?? undefined}
+                                    alt={entry.counterpartyName}
+                                    fallback={getInitials(
+                                        entry.counterpartyName,
+                                    )}
+                                />
+                            )}
+
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium">
+                                    {entry.counterpartyName}
+                                </p>
+                                <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                                    <UserAvatar
+                                        src={entry.groupImgUrl ?? undefined}
+                                        alt={entry.groupName}
+                                        fallback={getInitials(entry.groupName)}
+                                        className="size-4 text-[8px]"
+                                    />
+                                    <span className="truncate">
+                                        {entry.groupName}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="shrink-0 text-right">
+                                <p
+                                    className={[
+                                        "font-mono text-sm font-semibold tabular-nums",
+                                        isDanger
+                                            ? "text-red-500"
+                                            : "text-emerald-600 dark:text-emerald-400",
+                                    ].join(" ")}
+                                >
+                                    {formatVND(entry.amount)}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    {entry.groupCurrency}
+                                </p>
+                            </div>
+                        </Link>
+                    ))}
+                </Card>
+            )}
+        </div>
+    );
 }
 
 export function DashboardClient({
-    summary,
-    history,
-    currentMemberId,
-    isDemo,
+    dashboard,
 }: {
-    summary: BalancesSummaryResponseV1;
-    history: ExpenseHistoryResponseV1;
-    currentMemberId: string;
-    isDemo?: boolean;
+    dashboard: DashboardOverviewData;
 }) {
-    const myBalance = summary.memberBalances.find(
-        (m) => m.memberId === currentMemberId,
+    const iOweLedger = React.useMemo(
+        () => dashboard.ledger.filter((entry) => entry.direction === "iOwe"),
+        [dashboard.ledger],
     );
-    const netBalance = myBalance?.netAmount ?? 0;
-    const totalOwedToMe = summary.ledger
-        .filter((l) => l.toMemberId === currentMemberId)
-        .reduce((s, l) => s + l.amount, 0);
-    const totalIOwe = summary.ledger
-        .filter((l) => l.fromMemberId === currentMemberId)
-        .reduce((s, l) => s + l.amount, 0);
-    const myLedger = summary.ledger.filter(
-        (l) =>
-            l.fromMemberId === currentMemberId ||
-            l.toMemberId === currentMemberId,
+    const owedToMeLedger = React.useMemo(
+        () =>
+            dashboard.ledger.filter((entry) => entry.direction === "owedToMe"),
+        [dashboard.ledger],
     );
-    const recentExpenses = history.items.slice(0, 5);
-    const totalGroupSpending = history.items.reduce((s, e) => s + e.amount, 0);
 
     return (
         <div className="space-y-4 pb-4">
-            {isDemo && (
-                <div className="mx-4 mt-4 rounded-lg border border-amber-200/60 bg-amber-50/80 dark:bg-amber-950/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-400 backdrop-blur-sm">
-                    Demo mode – sample data (DB not connected)
-                </div>
-            )}
-
-            {/* Net balance hero */}
             <div className="px-4 pt-4 animate-fade-in-up">
-                <Card className="overflow-hidden border border-primary/20 glass-strong py-0 shadow-lg hover-lift border-glow">
+                <Card className="gap-1 py-3 hover-lift border-glow cursor-default relative overflow-hidden group border border-blue-200/30 dark:border-blue-800/20 bg-gradient-to-br from-blue-50/80 to-background dark:from-blue-950/20 dark:to-background">
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+                        <div className="absolute inset-0 animate-shimmer" />
+                    </div>
                     <CardContent className="p-5">
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <p className="text-xs text-muted-foreground uppercase tracking-widest">
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                                <p className="text-xs uppercase tracking-widest text-muted-foreground">
                                     Your Balance
                                 </p>
                                 <p
                                     className={[
-                                        "mt-1 text-3xl font-bold tabular-nums font-mono",
-                                        netBalance >= 0
+                                        "mt-1 break-words font-mono text-3xl font-bold tabular-nums",
+                                        dashboard.netBalance >= 0
                                             ? "text-emerald-500 dark:text-emerald-400"
                                             : "text-red-500",
                                     ].join(" ")}
                                 >
-                                    {netBalance >= 0 ? "+" : ""}
-                                    {formatVND(Math.abs(netBalance))}
+                                    {dashboard.netBalance >= 0 ? "+" : "-"}
+                                    {formatVND(Math.abs(dashboard.netBalance))}
                                 </p>
                                 <p className="mt-0.5 text-xs text-muted-foreground">
-                                    {netBalance >= 0
-                                        ? "You are owed"
-                                        : "You owe"}
+                                    {dashboard.netBalance >= 0
+                                        ? "Others owe you more than you owe."
+                                        : "You owe more than others owe you."}
                                 </p>
                             </div>
-                            <div className="flex size-12 items-center justify-center rounded-full bg-primary/15 ring-1 ring-primary/25 animate-pulse-glow">
+                            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/15 ring-1 ring-primary/25 animate-pulse-glow">
                                 <WalletIcon className="size-6 text-primary" />
                             </div>
                         </div>
@@ -100,38 +209,40 @@ export function DashboardClient({
                         <div className="grid grid-cols-2 gap-3">
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <div className="flex items-center gap-2 rounded-lg border border-emerald-200/40 dark:border-emerald-800/30 bg-emerald-50/80 dark:bg-emerald-950/20 px-3 py-2 cursor-default transition-all duration-200 hover:border-emerald-400/50 hover:scale-[1.02]">
-                                        <TrendingUpIcon className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                    <div className="flex cursor-default items-center gap-2 rounded-lg border border-emerald-200/40 bg-emerald-50/80 px-3 py-2 transition-all duration-200 hover:scale-[1.02] hover:border-emerald-400/50 dark:border-emerald-800/30 dark:bg-emerald-950/20">
+                                        <TrendingUpIcon className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                                         <div className="min-w-0">
                                             <p className="truncate text-xs text-muted-foreground">
                                                 Owed to You
                                             </p>
-                                            <p className="text-sm font-semibold font-mono text-emerald-600 dark:text-emerald-400 tabular-nums">
-                                                {formatVND(totalOwedToMe)}
+                                            <p className="font-mono text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                                                {formatVND(
+                                                    dashboard.totalOwedToMe,
+                                                )}
                                             </p>
                                         </div>
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom">
-                                    <p>Total amount others owe you</p>
+                                    <p>Total active debt others owe you</p>
                                 </TooltipContent>
                             </Tooltip>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <div className="flex items-center gap-2 rounded-lg border border-red-200/40 dark:border-red-800/30 bg-red-50/80 dark:bg-red-950/20 px-3 py-2 cursor-default transition-all duration-200 hover:border-red-400/50 hover:scale-[1.02]">
-                                        <TrendingDownIcon className="size-4 text-red-500 shrink-0" />
+                                    <div className="flex cursor-default items-center gap-2 rounded-lg border border-red-200/40 bg-red-50/80 px-3 py-2 transition-all duration-200 hover:scale-[1.02] hover:border-red-400/50 dark:border-red-800/30 dark:bg-red-950/20">
+                                        <TrendingDownIcon className="size-4 shrink-0 text-red-500" />
                                         <div className="min-w-0">
                                             <p className="truncate text-xs text-muted-foreground">
                                                 You Owe
                                             </p>
-                                            <p className="text-sm font-semibold font-mono text-red-500 tabular-nums">
-                                                {formatVND(totalIOwe)}
+                                            <p className="font-mono text-sm font-semibold tabular-nums text-red-500">
+                                                {formatVND(dashboard.totalIOwe)}
                                             </p>
                                         </div>
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom">
-                                    <p>Total amount you owe</p>
+                                    <p>Total active debt you owe others</p>
                                 </TooltipContent>
                             </Tooltip>
                         </div>
@@ -139,7 +250,6 @@ export function DashboardClient({
                 </Card>
             </div>
 
-            {/* Stats row */}
             <div className="grid grid-cols-2 gap-3 px-4 animate-fade-in-up stagger-2">
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -154,18 +264,18 @@ export function DashboardClient({
                             </CardHeader>
                             <CardContent className="px-3">
                                 <p className="text-lg font-bold font-mono text-blue-600 dark:text-blue-400 tabular-nums">
-                                    {formatVND(totalGroupSpending)}
+                                    {formatVND(dashboard.totalGroupSpending)}
                                 </p>
                             </CardContent>
                         </Card>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
-                        <p>Total group spending recorded</p>
+                        <p>Total spending across your groups</p>
                     </TooltipContent>
                 </Tooltip>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Card className="gap-1 py-3 hover-lift border-glow cursor-default relative overflow-hidden group border border-violet-200/30 dark:border-violet-800/20 bg-gradient-to-br from-violet-50/80 to-background dark:from-violet-950/20 dark:to-background">
+                        <Card className="gap-1 py-3 hover-lift border-glow cursor-default relative overflow-hidden group border border-violet-200/30 bg-gradient-to-br from-violet-50/80 to-background dark:border-violet-800/20 dark:from-violet-950/20 dark:to-background">
                             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
                                 <div className="absolute inset-0 animate-shimmer" />
                             </div>
@@ -175,153 +285,142 @@ export function DashboardClient({
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="px-3">
-                                <p className="text-lg font-bold font-mono text-violet-600 dark:text-violet-400 tabular-nums">
-                                    {history.totalCount}
+                                <p className="font-mono text-lg font-bold tabular-nums text-violet-600 dark:text-violet-400">
+                                    {dashboard.transactionCount}
                                 </p>
                             </CardContent>
                         </Card>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
-                        <p>Total expenses recorded</p>
+                        <p>Total expenses recorded across your groups</p>
                     </TooltipContent>
                 </Tooltip>
             </div>
 
-            {/* Settlement ledger */}
-            {myLedger.length > 0 && (
-                <div className="px-4 animate-fade-in-up stagger-3">
-                    <div className="flex items-center justify-between mb-2">
-                        <h2 className="text-sm font-semibold text-gradient">
-                            Settlement
-                        </h2>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs gap-1 underline-animate"
-                            asChild
-                        >
-                            <Link href="/members">
-                                View All <ArrowRightIcon className="size-3" />
-                            </Link>
-                        </Button>
-                    </div>
-                    <Card className="py-2 divide-y divide-border/50 border border-primary/10 glass hover-lift">
-                        {myLedger.map((entry) => {
-                            const iOwe = entry.fromMemberId === currentMemberId;
-                            const other = iOwe
-                                ? {
-                                      id: entry.toMemberId,
-                                      name: entry.toMemberName,
-                                  }
-                                : {
-                                      id: entry.fromMemberId,
-                                      name: entry.fromMemberName,
-                                  };
-                            return (
-                                <div
-                                    key={entry.ledgerId}
-                                    className="flex items-center gap-3 px-4 py-2.5 transition-colors duration-150 hover:bg-muted/30"
-                                >
-                                    <MemberAvatar name={other.name} size="sm" />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate">
-                                            {other.name}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {iOwe ? "You owe" : "Owes you"}
-                                        </p>
-                                    </div>
-                                    <Badge
-                                        variant={
-                                            iOwe ? "destructive" : "success"
-                                        }
-                                        className="tabular-nums shrink-0 font-mono"
-                                    >
-                                        {iOwe ? "-" : "+"}
-                                        {formatVND(entry.amount)}
-                                    </Badge>
-                                </div>
-                            );
-                        })}
-                    </Card>
-                </div>
-            )}
+            <div className="px-4 animate-fade-in-up stagger-3">
+                <DashboardCashflowChart data={dashboard.monthlyCashflow} />
+            </div>
 
-            {/* Recent expenses */}
             <div className="px-4 animate-fade-in-up stagger-4">
-                <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-sm font-semibold text-gradient">
+                <div className="mb-2 flex items-center justify-between">
+                    <Badge
+                        variant="secondary"
+                        className="gap-1.5 border-emerald-600/40 bg-emerald-600/10 text-emerald-500 shadow-none hover:bg-emerald-600/10 dark:bg-emerald-600/20"
+                    >
+                        Quick Access
+                    </Badge>
+
+                    <Badge variant="secondary">
+                        {dashboard.groupCount} groups
+                    </Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                    {dashboard.quickAccess.map((item) => (
+                        <Link
+                            key={`${item.kind}-${item.url}`}
+                            href={item.url}
+                            className="group flex min-h-16 items-center gap-2 rounded-lg border border-primary/10 bg-background/70 px-3 py-2 text-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:shadow-sm"
+                        >
+                            <span
+                                className={`${item.kind === "group" ? "border-none" : "border border-border/60"} flex size-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-muted/60 text-muted-foreground transition-colors group-hover:border-primary/20 group-hover:text-primary`}
+                            >
+                                <QuickAccessIcon item={item} />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                                <span className="block truncate font-medium">
+                                    {item.title}
+                                </span>
+                                <span className="block text-xs capitalize text-muted-foreground">
+                                    {item.kind}
+                                </span>
+                            </span>
+                            <ArrowRightIcon className="size-3 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                        </Link>
+                    ))}
+                </div>
+            </div>
+
+            <div className="grid gap-4 px-4 animate-fade-in-up stagger-5 lg:grid-cols-2">
+                <LedgerList
+                    title="You Owe"
+                    items={iOweLedger}
+                    emptyText="No active debt from you."
+                    variant="danger"
+                />
+                <LedgerList
+                    title="Owed to You"
+                    items={owedToMeLedger}
+                    emptyText="No active debt owed to you."
+                    variant="success"
+                />
+            </div>
+
+            <div className="px-4 animate-fade-in-up stagger-6">
+                <div className="mb-2 flex items-center justify-between">
+                    <Badge
+                        variant="secondary"
+                        className="gap-1.5 border-emerald-600/40 bg-emerald-600/10 text-emerald-500 shadow-none hover:bg-emerald-600/10 dark:bg-emerald-600/20"
+                    >
                         Recent Expenses
-                    </h2>
+                    </Badge>
+
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 text-xs gap-1 underline-animate"
+                        className="h-7 gap-1 text-xs underline-animate"
                         asChild
                     >
-                        <Link href="/history">
+                        <Link href="/my-ledger-history">
                             View All <ArrowRightIcon className="size-3" />
                         </Link>
                     </Button>
                 </div>
-                {recentExpenses.length === 0 ? (
-                    <p className="text-sm text-muted-foreground py-4 text-center">
+                {dashboard.recentExpenses.length === 0 ? (
+                    <Card className="border border-primary/10 py-5 text-center text-sm text-muted-foreground glass">
                         No expenses yet
-                    </p>
+                    </Card>
                 ) : (
-                    <Card className="py-2 divide-y divide-border/50 border border-primary/10 glass hover-lift">
-                        {recentExpenses.map((expense) => {
-                            const myShare = expense.shares.find(
-                                (s) => s.memberId === currentMemberId,
-                            );
-                            return (
-                                <div
-                                    key={expense.expenseId}
-                                    className="flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-muted/30"
-                                >
-                                    <ExpenseCategoryIcon
-                                        title={expense.title}
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate">
-                                            {expense.title}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {expense.paidByMemberName} &middot;{" "}
-                                            {new Date(
-                                                expense.occurredAt,
-                                            ).toLocaleDateString("vi-VN")}
-                                        </p>
-                                    </div>
-                                    <div className="text-right shrink-0">
-                                        <p className="text-sm font-semibold font-mono tabular-nums">
-                                            {formatVND(expense.amount)}
-                                        </p>
-                                        {myShare && (
-                                            <p className="text-xs text-muted-foreground tabular-nums font-mono">
-                                                You: {formatVND(myShare.amount)}
-                                            </p>
+                    <Card className="divide-y divide-border/50 border border-primary/10 py-2 glass hover-lift">
+                        {dashboard.recentExpenses.map((expense) => (
+                            <Link
+                                key={expense.expenseId}
+                                href={`/groups/${expense.groupId}`}
+                                className="flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-muted/30"
+                            >
+                                <div className="relative shrink-0">
+                                    <UserAvatar
+                                        src={expense.groupImgUrl ?? undefined}
+                                        alt={expense.groupName}
+                                        fallback={getInitials(
+                                            expense.groupName,
                                         )}
-                                    </div>
+                                    />
                                 </div>
-                            );
-                        })}
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-medium">
+                                        {expense.title}
+                                    </p>
+                                    <p className="truncate text-xs text-muted-foreground">
+                                        {expense.groupName} &middot;{" "}
+                                        {expense.paidByMemberName} &middot;{" "}
+                                        {formatDate(expense.occurredAt)}
+                                    </p>
+                                </div>
+                                <div className="shrink-0 text-right">
+                                    <p className="font-mono text-sm font-semibold tabular-nums">
+                                        {formatVND(expense.amount)}
+                                    </p>
+                                    {expense.myShareAmount !== null ? (
+                                        <p className="font-mono text-xs tabular-nums text-muted-foreground">
+                                            You:{" "}
+                                            {formatVND(expense.myShareAmount)}
+                                        </p>
+                                    ) : null}
+                                </div>
+                            </Link>
+                        ))}
                     </Card>
                 )}
-            </div>
-
-            {/* Add CTA */}
-            <div className="px-4 animate-fade-in-up stagger-5">
-                <Button
-                    asChild
-                    className="w-full gap-2 shadow-lg animate-pulse-glow"
-                    size="lg"
-                >
-                    <Link href="/expense">
-                        <PlusIcon className="size-5" />
-                        Add New Expense
-                    </Link>
-                </Button>
             </div>
         </div>
     );

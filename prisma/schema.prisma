@@ -28,6 +28,7 @@ model Group {
   name                   String
   currency               String                 @default("VND")
   order                  Int?                   @default(0)
+  imgUrl                 String?
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   User_Groups            User_Groups[]
@@ -57,20 +58,18 @@ model User {
   id                   String                 @id @default(auto()) @map("_id") @db.ObjectId
   name                 String
   email                String                 @unique
+  nickname             String?
   passwordHash         String?
-  //   phone               String?
-  //   address             String?
+  phone                String?
+  address              String?
+  bio                  String?
   imgUrl               String?
   username             String?
-  accountTagline       String?
-  bio                  String?
   pronouns             String?
   profileUrl           String?
   company              String?
   location             String?
   avatarTone           String?
-  socialLinks          Json?
-  profileHighlights    Json?
   isActive             Boolean                @default(true)
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt

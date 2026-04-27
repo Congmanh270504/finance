@@ -9,8 +9,15 @@ import {
 import type {
     GroupCrudItem,
     GroupsActionResponse,
+    RecentExpenseGroupItem,
 } from "@/features/groups/types";
+import { getCurrentUserContext } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+
+function normalizeOptionalText(value?: string | null) {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : null;
+}
 
 async function buildGroupCrudItem(
     groupId: string,
@@ -55,6 +62,100 @@ async function getNextGroupOrder() {
     return maxOrder + 1;
 }
 
+function revalidateGroupPaths() {
+    revalidatePath("/members");
+    revalidatePath("/groups");
+    revalidatePath("/", "layout");
+}
+
+export async function getRecentExpenseGroupsAction(): Promise<
+    GroupsActionResponse<RecentExpenseGroupItem[]>
+> {
+    try {
+        const context = await getCurrentUserContext();
+        const groupIds =
+            context?.memberships.map((membership) => membership.groupId) ?? [];
+
+        if (groupIds.length === 0) {
+            return {
+                success: true,
+                data: [],
+            };
+        }
+
+        const recentGroupStats = await prisma.expense.groupBy({
+            by: ["groupId"],
+            where: {
+                groupId: {
+                    in: groupIds,
+                },
+            },
+            _max: {
+                updatedAt: true,
+                occurredAt: true,
+                createdAt: true,
+            },
+            orderBy: [
+                {
+                    _max: {
+                        updatedAt: "desc",
+                    },
+                },
+                {
+                    _max: {
+                        occurredAt: "desc",
+                    },
+                },
+                {
+                    _max: {
+                        createdAt: "desc",
+                    },
+                },
+            ],
+            take: 5,
+        });
+
+        const activeGroupIds = recentGroupStats.map((item) => item.groupId);
+        const activeGroupIdSet = new Set(activeGroupIds);
+        const inactiveGroupIds = groupIds.filter(
+            (groupId) => !activeGroupIdSet.has(groupId),
+        );
+        const orderedGroupIds = [...activeGroupIds, ...inactiveGroupIds].slice(
+            0,
+            5,
+        );
+
+        const groups = await prisma.group.findMany({
+            where: {
+                id: {
+                    in: orderedGroupIds,
+                },
+            },
+            select: {
+                id: true,
+                name: true,
+                imgUrl: true,
+            },
+        });
+
+        const groupMap = new Map(groups.map((group) => [group.id, group]));
+        const orderedGroups = orderedGroupIds
+            .map((groupId) => groupMap.get(groupId))
+            .filter((group): group is RecentExpenseGroupItem => Boolean(group));
+
+        return {
+            success: true,
+            data: orderedGroups,
+        };
+    } catch (error) {
+        console.error("Failed to load recent expense groups", error);
+        return {
+            success: false,
+            error: "Khong the lay danh sach group gan day",
+        };
+    }
+}
+
 export async function createGroupAction(
     input: unknown,
 ): Promise<GroupsActionResponse<GroupCrudItem>> {
@@ -74,11 +175,12 @@ export async function createGroupAction(
             data: {
                 name: parsed.data.name,
                 currency: parsed.data.currency.toUpperCase(),
+                imgUrl: normalizeOptionalText(parsed.data.imgUrl),
                 order: nextOrder,
             },
         });
 
-        revalidatePath("/members");
+        revalidateGroupPaths();
 
         return {
             success: true,
@@ -116,12 +218,13 @@ export async function updateGroupAction(
             data: {
                 name: parsed.data.name,
                 currency: parsed.data.currency.toUpperCase(),
+                imgUrl: normalizeOptionalText(parsed.data.imgUrl),
             },
         });
 
         const group = await buildGroupCrudItem(parsed.data.id);
 
-        revalidatePath("/members");
+        revalidateGroupPaths();
 
         return group
             ? { success: true, data: group }
@@ -162,7 +265,7 @@ export async function reorderGroupsAction(
             ),
         );
 
-        revalidatePath("/members");
+        revalidateGroupPaths();
 
         return {
             success: true,
@@ -205,7 +308,7 @@ export async function deleteGroupAction(
             where: { id: groupId },
         });
 
-        revalidatePath("/members");
+        revalidateGroupPaths();
 
         return {
             success: true,

@@ -3,6 +3,7 @@ import { z } from "zod";
 export const createGroupSchema = z.object({
     name: z.string().trim().min(1, "Ten group la bat buoc"),
     currency: z.string().trim().min(1, "Loai tien la bat buoc").max(10),
+    imgUrl: z.string().trim().optional().nullable().or(z.literal("")),
 });
 
 export const updateGroupSchema = createGroupSchema.extend({

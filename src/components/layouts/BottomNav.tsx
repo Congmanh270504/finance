@@ -21,15 +21,15 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-    { href: "/dashboard", label: "Dashboard", icon: HomeIcon },
-    { href: "/history", label: "History", icon: ClockIcon },
+    { href: "/", label: "Dashboard", icon: HomeIcon },
+    { href: "/my-ledger-history", label: "History", icon: ClockIcon },
     {
         href: "/expense",
         label: "New Expense",
         icon: PlusCircleIcon,
         primary: true,
     },
-    { href: "/members", label: "Members", icon: UsersIcon },
+    { href: "/groups", label: "Groups", icon: UsersIcon },
     // { href: "/settings", label: "Settings", icon: SettingsIcon },
     { href: "/insights", label: "Insights", icon: BarChart2Icon },
 ];

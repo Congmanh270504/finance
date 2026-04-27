@@ -2,15 +2,12 @@
 
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
 import { DataTable } from "@/components/table/DataTable";
 import {
     Card,
     CardContent,
-    CardHeader,
     ImageBackgroundCard,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
     Select,
     SelectContent,
@@ -84,48 +81,39 @@ export function MyLedgerHistoryClient({
             </div>
 
             <Card className="py-0">
-                <CardHeader className="space-y-4">
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center mt-2">
-                        <div className="relative flex-1 max-w-60">
-                            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                className="p-4.5 pl-9"
-                                value={searchParams.get("query") ?? ""}
-                                onChange={(event) =>
-                                    replaceParams({
-                                        query: event.target.value,
-                                    })
-                                }
-                                placeholder="Tìm theo tiêu đề, ghi chú, người liên quan..."
-                            />
-                        </div>
-                        <Select
-                            value={searchParams.get("groupId") ?? "all"}
-                            onValueChange={(value) =>
-                                replaceParams({ groupId: value })
-                            }
-                        >
-                            <SelectTrigger className="w-fit">
-                                <SelectValue placeholder="All groups" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All groups</SelectItem>
-                                {data.groups.map((group) => (
-                                    <SelectItem key={group.id} value={group.id}>
-                                        {group.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </CardHeader>
                 <CardContent>
                     <DataTable
                         columns={columns}
                         data={data.items}
                         emptyMessage="Chưa có lịch sử công nợ phù hợp."
                         pagination={data.pagination}
-                        enableSearch={false}
+                        enableSearch={true}
+                        actions={[
+                            <Select
+                                key="group-filter"
+                                value={searchParams.get("groupId") ?? "all"}
+                                onValueChange={(value) =>
+                                    replaceParams({ groupId: value })
+                                }
+                            >
+                                <SelectTrigger className="w-fit">
+                                    <SelectValue placeholder="All groups" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        All groups
+                                    </SelectItem>
+                                    {data.groups.map((group) => (
+                                        <SelectItem
+                                            key={group.id}
+                                            value={group.id}
+                                        >
+                                            {group.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>,
+                        ]}
                     />
                 </CardContent>
             </Card>

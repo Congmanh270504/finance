@@ -1,6 +1,7 @@
 export type SettingsNavItem = {
   id: string;
   label: string;
+  href?: string;
   icon:
     | "user"
     | "shield"
@@ -26,11 +27,6 @@ export type SettingsNavSection = {
   items: SettingsNavItem[];
 };
 
-export type SocialLink = {
-  label: string;
-  value: string;
-};
-
 export type SettingHighlight = {
   label: string;
   value: string;
@@ -39,7 +35,8 @@ export type SettingHighlight = {
 export type SettingsProfile = {
   displayName: string;
   username: string;
-  accountTagline: string;
+  nickname: string;
+  phone: string;
   avatarUrl?: string | null;
   email: string;
   emailHint: string;
@@ -49,11 +46,20 @@ export type SettingsProfile = {
   company: string;
   location: string;
   avatarTone: string;
-  socialLinks: SocialLink[];
   highlights: SettingHighlight[];
 };
 
 export type SettingsPageData = {
   profile: SettingsProfile;
   navSections: SettingsNavSection[];
+};
+
+export type SettingsAccountData = {
+  id: string;
+  displayName: string;
+  email: string;
+  isActive: boolean;
+  hasPassword: boolean;
+  createdAt: string;
+  updatedAt: string;
 };

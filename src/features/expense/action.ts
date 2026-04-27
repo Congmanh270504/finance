@@ -88,7 +88,9 @@ function revalidateExpensePaths() {
     revalidatePath("/");
     revalidatePath("/expense");
     revalidatePath("/history");
+    revalidatePath("/groups");
     revalidatePath("/members");
+    revalidatePath("/", "layout");
 }
 
 type LedgerSnapshotEntry = {

@@ -5,6 +5,8 @@ export type GroupCrudItem = Group & {
     activeMemberCount: number;
 };
 
+export type RecentExpenseGroupItem = Pick<Group, "id" | "name" | "imgUrl">;
+
 export type GroupsActionResponse<T> = {
     success: boolean;
     data?: T;

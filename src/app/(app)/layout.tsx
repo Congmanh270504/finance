@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/layouts/BottomNav";
 import { DesktopHeader } from "@/components/layouts/DesktopHeader";
 import { MobileHeader } from "@/components/layouts/MobileHeader";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { getRecentExpenseGroupsAction } from "@/features/groups/action";
 import { getRecentNotificationsAction } from "@/features/notification/action";
 import { getCurrentUserContext } from "@/lib/auth";
 import Image from "next/image";
@@ -61,7 +62,7 @@ function PageFrame({ children }: { children: React.ReactNode }) {
                 className="absolute bottom-2 right-2 z-10 rotate-y-180 object-contain"
             />
 
-            <div className="relative z-20 h-full min-h-0 overflow-y-auto px-15 py-10">
+            <div className="relative z-20 h-full min-h-0 overflow-y-auto p-5 md:px-15 md:py-10">
                 {children}
             </div>
         </div>
@@ -79,7 +80,10 @@ export default async function AppLayout({
         redirect("/login");
     }
 
-    const notificationsResult = await getRecentNotificationsAction();
+    const [notificationsResult, recentGroupsResult] = await Promise.all([
+        getRecentNotificationsAction(),
+        getRecentExpenseGroupsAction(),
+    ]);
 
     return (
         <div className="relative min-h-screen bg-background scanlines">
@@ -96,6 +100,7 @@ export default async function AppLayout({
                 <AppSidebar
                     groupName={context.primaryGroupName}
                     memberCount={context.primaryGroupMemberCount}
+                    recentExpenseGroups={recentGroupsResult.data ?? []}
                     user={{
                         name: context.user.name,
                         email: context.user.email,
@@ -109,6 +114,11 @@ export default async function AppLayout({
                     />
                     <div className="md:hidden">
                         <MobileHeader
+                            user={{
+                                name: context.user.name,
+                                email: context.user.email,
+                                avatar: context.user.imgUrl ?? "",
+                            }}
                             groupName={context.primaryGroupName}
                             memberCount={context.primaryGroupMemberCount}
                         />

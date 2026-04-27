@@ -5,7 +5,15 @@ import Link from "next/link";
 import { DragDropProvider, type DragEndEvent } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { toast } from "sonner";
-import { Check, GripVertical, Pencil, Plus, Trash2, X } from "lucide-react";
+import {
+    Check,
+    GripVertical,
+    ImagePlus,
+    Pencil,
+    Plus,
+    Trash2,
+    X,
+} from "lucide-react";
 import DeleteDialog from "@/components/delete-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,10 +44,8 @@ import type {
     UpdateGroupInput,
 } from "@/features/groups/schema";
 import type { GroupCrudItem } from "@/features/groups/types";
-import {
-    reorderGroupsByIds,
-    sortGroupsByOrder,
-} from "@/features/groups/utils";
+import { reorderGroupsByIds, sortGroupsByOrder } from "@/features/groups/utils";
+import UserAvatar from "@/components/user-avatar";
 import { cn } from "@/lib/utils";
 
 type GroupCrudDialogProps = {
@@ -56,14 +62,18 @@ type GroupCrudDialogProps = {
 type DraftValue = {
     name: string;
     currency: string;
+    imgUrl: string;
 };
 
 type DraftState = Record<string, DraftValue>;
+type ImageFileState = Record<string, File | undefined>;
+type ImagePreviewState = Record<string, string | undefined>;
 
 type GroupTableRow = {
     id: string;
     name: string;
     currency: string;
+    imgUrl?: string | null;
     order?: number | null;
     memberCount: number;
     activeMemberCount: number;
@@ -90,6 +100,9 @@ type GroupTableMeta = {
         field: keyof DraftValue,
         value: string,
     ) => void;
+    updateImageDraft: (rowId: string, file: File) => void;
+    clearImageDraft: (rowId: string) => void;
+    getImagePreview: (row: GroupTableRow) => string | undefined;
     beginEdit: (row: GroupTableRow) => void;
     cancelEdit: (rowId: string) => void;
     saveRow: (row: GroupTableRow) => Promise<void>;
@@ -102,6 +115,13 @@ const SORTABLE_GROUP_ID = "groups-crud-table";
 const DEFAULT_DRAFT: DraftValue = {
     name: "",
     currency: "VND",
+    imgUrl: "",
+};
+
+type UploadGroupImageResponse = {
+    success?: boolean;
+    message?: string;
+    url?: string;
 };
 
 function buildDemoId(prefix: string) {
@@ -113,9 +133,43 @@ function buildDemoId(prefix: string) {
 }
 
 function getNextLocalGroupOrder(groups: GroupCrudItem[]) {
-    return groups.reduce((maxOrder, group) => {
-        return Math.max(maxOrder, group.order ?? -1);
-    }, -1) + 1;
+    return (
+        groups.reduce((maxOrder, group) => {
+            return Math.max(maxOrder, group.order ?? -1);
+        }, -1) + 1
+    );
+}
+
+function getInitials(name: string) {
+    return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase();
+}
+
+async function uploadGroupImage(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "finance/groups");
+    formData.append("type", "image");
+
+    const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+    });
+
+    const data = (await response
+        .json()
+        .catch(() => null)) as UploadGroupImageResponse | null;
+
+    if (!response.ok || !data?.success || !data.url) {
+        throw new Error(data?.message ?? "Upload failed");
+    }
+
+    return data.url;
 }
 
 function GroupSortableRow({
@@ -127,12 +181,7 @@ function GroupSortableRow({
     index: number;
     meta: GroupTableMeta;
 }) {
-    const {
-        ref,
-        handleRef,
-        isDragSource,
-        isDropTarget,
-    } = useSortable({
+    const { ref, handleRef, isDragSource, isDropTarget } = useSortable({
         id: row.id,
         index,
         group: SORTABLE_GROUP_ID,
@@ -143,10 +192,26 @@ function GroupSortableRow({
     const isSaving = meta.isSaving(row.id);
     const isDeleting = meta.isDeleting(row.id);
     const draft = meta.getDraft(row);
+    const imagePreview = meta.getImagePreview(row);
     const actionsDisabled =
         meta.isBusy ||
         (meta.editingId !== null && meta.editingId !== row.id) ||
         isDeleting;
+    const handleImageFileChange = (
+        event: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = event.target.files?.[0] ?? null;
+        event.target.value = "";
+
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            toast.error("Please select an image file");
+            return;
+        }
+
+        meta.updateImageDraft(row.id, file);
+    };
 
     return (
         <tr
@@ -172,6 +237,48 @@ function GroupSortableRow({
                         <GripVertical className="size-4 text-muted-foreground" />
                     </span>
                 </Button>
+            </TableCell>
+            <TableCell className="w-28">
+                <div className="flex items-center gap-2">
+                    {isEditing ? (
+                        <div className="flex items-center gap-1">
+                            <label
+                                className={cn(
+                                    "relative inline-flex cursor-pointer",
+                                    isSaving &&
+                                        "pointer-events-none opacity-50",
+                                )}
+                                aria-label="Upload group image"
+                            >
+                                <UserAvatar
+                                    src={imagePreview}
+                                    alt={draft.name}
+                                    fallback={getInitials(
+                                        draft.name || "Group",
+                                    )}
+                                    className="size-9 transition-all hover:ring-2 hover:ring-primary/30"
+                                />
+                                <span className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full border border-background bg-muted text-muted-foreground shadow-sm">
+                                    <ImagePlus className="size-3" />
+                                </span>
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    className="hidden"
+                                    disabled={isSaving}
+                                    onChange={handleImageFileChange}
+                                />
+                            </label>
+                        </div>
+                    ) : (
+                        <UserAvatar
+                            src={imagePreview}
+                            alt={row.name}
+                            fallback={getInitials(row.name || "Group")}
+                            className="size-9"
+                        />
+                    )}
+                </div>
             </TableCell>
             <TableCell className="min-w-[220px]">
                 {isEditing ? (
@@ -297,18 +404,63 @@ export function GroupCrudDialog({
 }: GroupCrudDialogProps) {
     const [editingId, setEditingId] = React.useState<string | null>(null);
     const [drafts, setDrafts] = React.useState<DraftState>({});
+    const [imageFiles, setImageFiles] = React.useState<ImageFileState>({});
+    const [imagePreviewUrls, setImagePreviewUrls] =
+        React.useState<ImagePreviewState>({});
     const [submitState, setSubmitState] = React.useState<SubmitState>(null);
     const [deleteTarget, setDeleteTarget] =
         React.useState<GroupCrudItem | null>(null);
 
+    const revokeImagePreview = React.useCallback(
+        (rowId: string, previews = imagePreviewUrls) => {
+            const previewUrl = previews[rowId];
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl);
+            }
+        },
+        [imagePreviewUrls],
+    );
+
+    const clearRowImageState = React.useCallback(
+        (rowId: string) => {
+            revokeImagePreview(rowId);
+            setImageFiles((current) => {
+                const next = { ...current };
+                delete next[rowId];
+                return next;
+            });
+            setImagePreviewUrls((current) => {
+                const next = { ...current };
+                delete next[rowId];
+                return next;
+            });
+        },
+        [revokeImagePreview],
+    );
+
+    const resetTransientState = React.useCallback(() => {
+        setEditingId(null);
+        setDrafts({});
+        Object.values(imagePreviewUrls).forEach((previewUrl) => {
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl);
+            }
+        });
+        setImageFiles({});
+        setImagePreviewUrls({});
+        setDeleteTarget(null);
+        setSubmitState(null);
+    }, [imagePreviewUrls]);
+
     React.useEffect(() => {
-        if (!open) {
-            setEditingId(null);
-            setDrafts({});
-            setDeleteTarget(null);
-            setSubmitState(null);
-        }
-    }, [open]);
+        return () => {
+            Object.values(imagePreviewUrls).forEach((previewUrl) => {
+                if (previewUrl) {
+                    URL.revokeObjectURL(previewUrl);
+                }
+            });
+        };
+    }, [imagePreviewUrls]);
 
     const orderedGroups = React.useMemo(
         () => sortGroupsByOrder(groups),
@@ -328,14 +480,49 @@ export function GroupCrudDialog({
         [],
     );
 
-    const cancelEdit = React.useCallback((rowId: string) => {
-        setEditingId((current) => (current === rowId ? null : current));
-        setDrafts((current) => {
-            const next = { ...current };
-            delete next[rowId];
-            return next;
-        });
-    }, []);
+    const updateImageDraft = React.useCallback(
+        (rowId: string, file: File) => {
+            revokeImagePreview(rowId);
+
+            const objectUrl = URL.createObjectURL(file);
+            setImageFiles((current) => ({
+                ...current,
+                [rowId]: file,
+            }));
+            setImagePreviewUrls((current) => ({
+                ...current,
+                [rowId]: objectUrl,
+            }));
+        },
+        [revokeImagePreview],
+    );
+
+    const clearImageDraft = React.useCallback(
+        (rowId: string) => {
+            clearRowImageState(rowId);
+            setDrafts((current) => ({
+                ...current,
+                [rowId]: {
+                    ...(current[rowId] ?? DEFAULT_DRAFT),
+                    imgUrl: "",
+                },
+            }));
+        },
+        [clearRowImageState],
+    );
+
+    const cancelEdit = React.useCallback(
+        (rowId: string) => {
+            setEditingId((current) => (current === rowId ? null : current));
+            setDrafts((current) => {
+                const next = { ...current };
+                delete next[rowId];
+                return next;
+            });
+            clearRowImageState(rowId);
+        },
+        [clearRowImageState],
+    );
 
     const beginEdit = React.useCallback((row: GroupTableRow) => {
         if (row.isNew) return;
@@ -346,6 +533,7 @@ export function GroupCrudDialog({
             [row.id]: {
                 name: row.name,
                 currency: row.currency,
+                imgUrl: row.imgUrl ?? "",
             },
         }));
     }, []);
@@ -373,12 +561,23 @@ export function GroupCrudDialog({
         });
 
         try {
+            const uploadedImageUrl = imageFiles[NEW_ROW_ID]
+                ? isDemo
+                    ? draft.imgUrl
+                    : await uploadGroupImage(imageFiles[NEW_ROW_ID])
+                : draft.imgUrl;
+            const nextPayload: CreateGroupInput = {
+                ...payload,
+                imgUrl: uploadedImageUrl,
+            };
+
             if (isDemo) {
                 const now = new Date();
                 onCreated({
                     id: buildDemoId("demo-group"),
-                    name: payload.name.trim(),
-                    currency: payload.currency.trim().toUpperCase(),
+                    name: nextPayload.name.trim(),
+                    currency: nextPayload.currency.trim().toUpperCase(),
+                    imgUrl: nextPayload.imgUrl || null,
                     order: getNextLocalGroupOrder(orderedGroups),
                     createdAt: now,
                     updatedAt: now,
@@ -386,7 +585,7 @@ export function GroupCrudDialog({
                     activeMemberCount: 0,
                 });
             } else {
-                const result = await createGroupAction(payload);
+                const result = await createGroupAction(nextPayload);
                 if (!result.success || !result.data) {
                     throw new Error(result.error ?? "Unable to create group");
                 }
@@ -404,7 +603,7 @@ export function GroupCrudDialog({
         } finally {
             setSubmitState(null);
         }
-    }, [cancelEdit, drafts, isDemo, onCreated, orderedGroups]);
+    }, [cancelEdit, drafts, imageFiles, isDemo, onCreated, orderedGroups]);
 
     const handleUpdateGroup = React.useCallback(
         async (groupId: string) => {
@@ -423,6 +622,16 @@ export function GroupCrudDialog({
             });
 
             try {
+                const uploadedImageUrl = imageFiles[groupId]
+                    ? isDemo
+                        ? draft.imgUrl
+                        : await uploadGroupImage(imageFiles[groupId])
+                    : draft.imgUrl;
+                const nextPayload: UpdateGroupInput = {
+                    ...payload,
+                    imgUrl: uploadedImageUrl,
+                };
+
                 if (isDemo) {
                     const current = orderedGroups.find(
                         (group) => group.id === groupId,
@@ -433,11 +642,12 @@ export function GroupCrudDialog({
 
                     onUpdated({
                         ...current,
-                        name: payload.name.trim(),
-                        currency: payload.currency.trim().toUpperCase(),
+                        name: nextPayload.name.trim(),
+                        currency: nextPayload.currency.trim().toUpperCase(),
+                        imgUrl: nextPayload.imgUrl || null,
                     });
                 } else {
-                    const result = await updateGroupAction(payload);
+                    const result = await updateGroupAction(nextPayload);
                     if (!result.success || !result.data) {
                         throw new Error(
                             result.error ?? "Unable to update group",
@@ -460,7 +670,7 @@ export function GroupCrudDialog({
                 setSubmitState(null);
             }
         },
-        [cancelEdit, drafts, isDemo, onUpdated, orderedGroups],
+        [cancelEdit, drafts, imageFiles, isDemo, onUpdated, orderedGroups],
     );
 
     const handleReorderGroups = React.useCallback(
@@ -516,7 +726,14 @@ export function GroupCrudDialog({
                 setSubmitState(null);
             }
         },
-        [deleteTarget, editingId, isDemo, onReordered, orderedGroups, submitState],
+        [
+            deleteTarget,
+            editingId,
+            isDemo,
+            onReordered,
+            orderedGroups,
+            submitState,
+        ],
     );
 
     const handleDeleteGroup = React.useCallback(async () => {
@@ -562,6 +779,7 @@ export function GroupCrudDialog({
             id: group.id,
             name: group.name,
             currency: group.currency,
+            imgUrl: group.imgUrl,
             order: group.order,
             memberCount: group.memberCount,
             activeMemberCount: group.activeMemberCount,
@@ -573,6 +791,7 @@ export function GroupCrudDialog({
                     id: NEW_ROW_ID,
                     name: "",
                     currency: "VND",
+                    imgUrl: "",
                     order: -1,
                     memberCount: 0,
                     activeMemberCount: 0,
@@ -601,14 +820,21 @@ export function GroupCrudDialog({
                 (submitState.action === "create" ||
                     submitState.action === "update"),
             isDeleting: (rowId) =>
-                submitState?.rowId === rowId &&
-                submitState.action === "delete",
+                submitState?.rowId === rowId && submitState.action === "delete",
             getDraft: (row) =>
                 drafts[row.id] ?? {
                     name: row.name,
                     currency: row.currency,
+                    imgUrl: row.imgUrl ?? "",
                 },
             updateDraft,
+            updateImageDraft,
+            clearImageDraft,
+            getImagePreview: (row) =>
+                imagePreviewUrls[row.id] ??
+                drafts[row.id]?.imgUrl ??
+                row.imgUrl ??
+                undefined,
             beginEdit,
             cancelEdit,
             saveRow: async (row) => {
@@ -620,7 +846,9 @@ export function GroupCrudDialog({
                 await handleUpdateGroup(row.id);
             },
             requestDelete: (row) => {
-                const target = orderedGroups.find((group) => group.id === row.id);
+                const target = orderedGroups.find(
+                    (group) => group.id === row.id,
+                );
                 if (target) {
                     setDeleteTarget(target);
                 }
@@ -635,10 +863,13 @@ export function GroupCrudDialog({
             editingId,
             handleCreateGroup,
             handleUpdateGroup,
+            imagePreviewUrls,
             isReordering,
             orderedGroups,
             submitState,
             updateDraft,
+            updateImageDraft,
+            clearImageDraft,
         ],
     );
 
@@ -664,7 +895,16 @@ export function GroupCrudDialog({
 
     return (
         <>
-            <Dialog open={open} onOpenChange={onOpenChange}>
+            <Dialog
+                open={open}
+                onOpenChange={(nextOpen) => {
+                    if (!nextOpen) {
+                        resetTransientState();
+                    }
+
+                    onOpenChange(nextOpen);
+                }}
+            >
                 <DialogContent className="max-h-[90vh] overflow-hidden p-0 md:max-w-4xl">
                     <DialogHeader className="border-b px-6 py-4">
                         <DialogTitle>Group Management</DialogTitle>
@@ -695,6 +935,9 @@ export function GroupCrudDialog({
                                         <TableRow className="hover:bg-primary/10 bg-primary/5 border-b border-gray-200">
                                             <TableHead className="w-12 text-center font-semibold text-gray-700">
                                                 #
+                                            </TableHead>
+                                            <TableHead className="w-28 font-semibold text-gray-700">
+                                                Image
                                             </TableHead>
                                             <TableHead className="font-semibold text-gray-700">
                                                 Group Name
@@ -732,7 +975,7 @@ export function GroupCrudDialog({
                                         ) : (
                                             <TableRow>
                                                 <TableCell
-                                                    colSpan={6}
+                                                    colSpan={7}
                                                     className="h-24 text-center text-muted-foreground italic"
                                                 >
                                                     No groups yet.

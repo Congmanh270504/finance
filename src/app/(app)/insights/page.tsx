@@ -1,25 +1,24 @@
+import { redirect } from "next/navigation";
+import { getInsightsYearlyStatsAction } from "@/features/insights/action";
 import { InsightsClient } from "@/features/insights/components/InsightsClient";
-import { fetchInsightsCharts } from "@/features/finance/action";
-import { DEMO_GROUP_ID } from "@/features/finance/constants";
-import { getCurrentUserContext } from "@/lib/auth";
 
 export const metadata = { title: "Thong ke | Chi tieu nhom" };
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-export default async function InsightsPage() {
-    const context = await getCurrentUserContext();
-    const { data: charts, isDemo } = await fetchInsightsCharts(
-        context?.primaryGroupId ?? DEMO_GROUP_ID,
-    );
+export default async function InsightsPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ year?: string }>;
+}) {
+    const params = await searchParams;
+    const data = await getInsightsYearlyStatsAction({
+        year: params.year,
+    });
 
-    return (
-        <div>
-            <div className="px-4 pb-1 pt-4">
-                <h1 className="text-lg font-bold">Thong ke</h1>
-                <p className="text-xs text-muted-foreground">
-                    Phan tich chi tieu theo thoi gian
-                </p>
-            </div>
-            <InsightsClient charts={charts} isDemo={isDemo} />
-        </div>
-    );
+    if (!data) {
+        redirect("/login");
+    }
+
+    return <InsightsClient data={data} />;
 }

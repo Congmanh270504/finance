@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { dashboardSidebarLinks } from "@/components/desk-sidebar/nav-data";
 import {
     BookOpenIcon,
     BotIcon,
@@ -28,30 +29,26 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import type { RecentExpenseGroupItem } from "@/features/groups/types";
 
-const data = {
-    navMain: [
+function buildNavMainItems(recentExpenseGroups: RecentExpenseGroupItem[]) {
+    return [
         {
             title: "Dashboard",
             url: "/",
             icon: <TerminalSquareIcon />,
             isActive: true,
-            items: [
-                { title: "Overview", url: "/" },
-                { title: "Expense", url: "/expense" },
-                { title: "Debt History", url: "/my-ledger-history" },
-                { title: "Expense History", url: "/history" },
-                { title: "Insights", url: "/insights" },
-            ],
+            items: dashboardSidebarLinks,
         },
         {
-            title: "Members",
-            url: "/members",
+            title: "Groups",
+            url: "/groups",
             icon: <BotIcon />,
-            items: [
-                { title: "Balance", url: "/members" },
-                { title: "QR Payment", url: "/members" },
-            ],
+            isActive: true,
+            items: recentExpenseGroups.map((group) => ({
+                title: group.name,
+                url: `/groups/${group.id}`,
+            })),
         },
         {
             title: "Profile",
@@ -67,13 +64,12 @@ const data = {
             title: "System Settings",
             url: "/settings",
             icon: <Settings2Icon />,
-            items: [
-                { title: "Account", url: "/settings" },
-                { title: "Security", url: "/settings" },
-                { title: "Customize UI", url: "/settings" },
-            ],
+            items: [{ title: "Account", url: "/settings/account" }],
         },
-    ],
+    ];
+}
+
+const data = {
     navSecondary: [
         {
             title: "Add Expense",
@@ -113,11 +109,13 @@ const data = {
 export function AppSidebar({
     groupName,
     memberCount,
+    recentExpenseGroups = [],
     user,
     ...props
 }: React.ComponentProps<typeof Sidebar> & {
     groupName: string;
     memberCount: number;
+    recentExpenseGroups?: RecentExpenseGroupItem[];
     user: {
         name: string;
         email: string;
@@ -148,7 +146,7 @@ export function AppSidebar({
                 </SidebarMenu>
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={data.navMain} />
+                <NavMain items={buildNavMainItems(recentExpenseGroups)} />
                 <NavProjects projects={data.projects} />
                 <NavSecondary items={data.navSecondary} className="mt-auto" />
             </SidebarContent>

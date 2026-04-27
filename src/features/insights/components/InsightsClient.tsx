@@ -1,294 +1,219 @@
 "use client";
 
 import * as React from "react";
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    Tooltip as RechartsTooltip,
-    ResponsiveContainer,
-    Cell,
-} from "recharts";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-} from "@/components/ui/card";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { CalendarDaysIcon, ReceiptTextIcon, WalletIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { MemberAvatar } from "@/features/finance/components/shared/MemberAvatar";
-import type { InsightsChartsResponseV1 } from "@/features/finance/type";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { ChartLineMultiple } from "@/features/insights/components/chart-mutiple";
+import type {
+    InsightsMonthStat,
+    InsightsYearlyStats,
+} from "@/features/insights/types";
 
 function formatVND(amount: number) {
-    return new Intl.NumberFormat("vi-VN").format(amount) + " ₫";
-}
-function formatBucketLabel(iso: string, bucket: string) {
-    const d = new Date(iso);
-    if (bucket === "month")
-        return d.toLocaleDateString("vi-VN", {
-            month: "short",
-            year: "2-digit",
-        });
-    return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+    return new Intl.NumberFormat("vi-VN").format(amount) + " VND";
 }
 
-const PAYER_COLORS = [
-    "var(--chart-1)",
-    "var(--chart-2)",
-    "var(--chart-3)",
-    "var(--chart-4)",
-    "var(--chart-5)",
+function formatCompactVND(amount: number) {
+    if (amount >= 1_000_000) {
+        return `${new Intl.NumberFormat("vi-VN", {
+            maximumFractionDigits: 1,
+        }).format(amount / 1_000_000)}M`;
+    }
+
+    if (amount >= 1_000) {
+        return `${new Intl.NumberFormat("vi-VN", {
+            maximumFractionDigits: 0,
+        }).format(amount / 1_000)}K`;
+    }
+
+    return new Intl.NumberFormat("vi-VN").format(amount);
+}
+
+const MONTH_LABELS = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
 ];
 
-const tooltipStyle = {
-    borderRadius: "0.5rem",
-    border: "1px solid var(--border)",
-    background: "oklch(from var(--popover) l c h / 0.85)",
-    backdropFilter: "blur(12px)",
-    color: "var(--popover-foreground)",
-    fontSize: 12,
-};
+function getMonthLabel(month: number) {
+    return MONTH_LABELS[month - 1] ?? `Month ${month}`;
+}
 
-export function InsightsClient({
-    charts,
-    isDemo,
-}: {
-    charts: InsightsChartsResponseV1;
-    isDemo?: boolean;
-}) {
-    const trendData = charts.trend.map((p) => ({
-        label: formatBucketLabel(p.bucketStart, charts.bucket),
-        total: p.totalAmount,
-        count: p.expenseCount,
-    }));
-    const payerData = charts.topPayers.map((p) => ({
-        name: p.memberName,
-        total: p.totalAmount,
-        id: p.memberId,
-    }));
+function pluralize(count: number, singular: string, plural = `${singular}s`) {
+    return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function MonthStatCard({ month }: { month: InsightsMonthStat }) {
+    const hasData = month.expenseCount > 0;
+
+    return (
+        <div
+            className={[
+                "relative min-h-[132px] overflow-hidden rounded-xl border p-3 transition-all hover:-translate-y-0.5 hover:shadow-sm",
+                hasData
+                    ? "border-primary/20 bg-background/80"
+                    : "border-border/60 bg-muted/30",
+            ].join(" ")}
+        >
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <p className="text-sm font-semibold text-foreground">
+                        {getMonthLabel(month.month)}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                        {pluralize(month.expenseCount, "transaction")}
+                    </p>
+                </div>
+                <Badge variant={hasData ? "secondary" : "outline"}>
+                    {pluralize(month.groupCount, "group")}
+                </Badge>
+            </div>
+
+            <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-muted-foreground">
+                        My share
+                    </span>
+                    <span className="font-mono text-sm font-semibold tabular-nums text-violet-600 dark:text-violet-400">
+                        {formatCompactVND(month.myShareAmount)}
+                    </span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-muted-foreground">
+                        Paid by me
+                    </span>
+                    <span className="font-mono text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                        {formatCompactVND(month.paidByMeAmount)}
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export function InsightsClient({ data }: { data: InsightsYearlyStats }) {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    function replaceYear(year: string) {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("year", year);
+        router.replace(`${pathname}?${params.toString()}`);
+    }
+
     const avg =
-        charts.expenseCount > 0
-            ? Math.round(charts.totalAmount / charts.expenseCount)
+        data.summary.expenseCount > 0
+            ? Math.round(data.summary.totalAmount / data.summary.expenseCount)
             : 0;
 
     return (
-        <div className="space-y-4 pb-4 pt-4 px-4">
-            {isDemo && (
-                <div className="rounded-lg border border-amber-200/60 bg-amber-50/80 dark:bg-amber-950/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-400 backdrop-blur-sm">
-                    Demo mode – sample data
-                </div>
-            )}
-            <div className="flex items-start justify-between animate-fade-in-down">
+        <div className="space-y-4 px-4 pb-4 pt-4">
+            <div className="flex flex-col gap-3 animate-fade-in-down md:flex-row md:items-end md:justify-between">
                 <div>
                     <h2 className="text-sm font-semibold text-gradient">
                         Spending Statistics
                     </h2>
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                        {new Date(charts.fromDate).toLocaleDateString("vi-VN")}{" "}
-                        â†’{" "}
-                        {new Date(charts.toDate).toLocaleDateString("vi-VN")}
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                        Analyze spending across all 12 months of the year.
                     </p>
                 </div>
-                <Badge
-                    variant="secondary"
-                    className="bg-primary/10 text-primary border border-primary/20 font-mono"
-                >
-                    {charts.bucket === "day"
-                        ? "Day"
-                        : charts.bucket === "week"
-                          ? "Week"
-                          : "Month"}
-                </Badge>
+
+                {data.yearOptions.length > 0 ? (
+                    <Select
+                        value={String(data.selectedYear)}
+                        onValueChange={replaceYear}
+                    >
+                        <SelectTrigger className="w-full md:w-36">
+                            <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {data.yearOptions.map((option) => (
+                                <SelectItem
+                                    key={option.year}
+                                    value={String(option.year)}
+                                >
+                                    {option.year} ({option.expenseCount})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ) : (
+                    <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                        No years with data yet
+                    </div>
+                )}
             </div>
-            <div className="grid grid-cols-2 gap-3 animate-fade-in-up stagger-1">
-                <Card className="gap-1 py-3 hover-lift border-glow border border-blue-200/30 dark:border-blue-800/20 bg-gradient-to-br from-blue-50/80 to-background dark:from-blue-950/20 dark:to-background">
+
+            <div className="grid gap-3 md:grid-cols-3 animate-fade-in-up stagger-1">
+                <Card className="gap-1 py-3 hover-lift border-glow border border-violet-200/30 bg-gradient-to-br from-violet-50/80 to-background dark:border-violet-800/20 dark:from-violet-950/20 dark:to-background">
                     <CardHeader className="px-3 pb-0">
-                        <CardTitle className="text-xs text-muted-foreground font-medium">
-                            Total Spending
+                        <CardTitle className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                            <ReceiptTextIcon className="size-3.5" />
+                            Transactions
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="px-3">
-                        <p className="text-base font-bold font-mono text-blue-600 dark:text-blue-400 tabular-nums">
-                            {formatVND(charts.totalAmount)}
+                        <p className="font-mono text-lg font-bold tabular-nums text-violet-600 dark:text-violet-400">
+                            {data.summary.expenseCount}
                         </p>
                     </CardContent>
                 </Card>
-                <Card className="gap-1 py-3 hover-lift border-glow border border-violet-200/30 dark:border-violet-800/20 bg-gradient-to-br from-violet-50/80 to-background dark:from-violet-950/20 dark:to-background">
+                <Card className="gap-1 py-3 hover-lift border-glow border border-emerald-200/30 bg-gradient-to-br from-emerald-50/80 to-background dark:border-emerald-800/20 dark:from-emerald-950/20 dark:to-background">
                     <CardHeader className="px-3 pb-0">
-                        <CardTitle className="text-xs text-muted-foreground font-medium">
-                            Avg/Item
+                        <CardTitle className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                            <CalendarDaysIcon className="size-3.5" />
+                            Average
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="px-3">
-                        <p className="text-base font-bold font-mono text-violet-600 dark:text-violet-400 tabular-nums">
+                        <p className="font-mono text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
                             {formatVND(avg)}
                         </p>
                     </CardContent>
                 </Card>
             </div>
-            {trendData.length > 0 && (
-                <Card className="py-4 border border-primary/10 glass hover-lift animate-fade-in-up stagger-2">
-                    <CardHeader className="px-4 pb-2">
-                        <CardTitle className="text-sm text-gradient">
-                            Spending Trend
-                        </CardTitle>
-                        <CardDescription className="text-xs font-mono">
-                            {charts.expenseCount} expenses
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="px-2">
-                        <ResponsiveContainer width="100%" height={180}>
-                            <BarChart
-                                data={trendData}
-                                margin={{
-                                    top: 4,
-                                    right: 8,
-                                    left: -16,
-                                    bottom: 0,
-                                }}
-                            >
-                                <XAxis
-                                    dataKey="label"
-                                    tick={{
-                                        fontSize: 11,
-                                        fill: "var(--muted-foreground)",
-                                    }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <YAxis
-                                    tickFormatter={(v) =>
-                                        `${(v / 1000).toFixed(0)}k`
-                                    }
-                                    tick={{
-                                        fontSize: 10,
-                                        fill: "var(--muted-foreground)",
-                                    }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <RechartsTooltip
-                                    formatter={(
-                                        value: number,
-                                        _: string,
-                                        entry: { payload?: { count?: number } },
-                                    ) => [
-                                        `${formatVND(value)} (${entry?.payload?.count ?? 0} items)`,
-                                        "Spending",
-                                    ]}
-                                    contentStyle={tooltipStyle}
-                                />
-                                <Bar
-                                    dataKey="total"
-                                    radius={[4, 4, 0, 0]}
-                                    fill="var(--primary)"
-                                />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            )}
-            {payerData.length > 0 && (
-                <Card className="py-4 border border-primary/10 glass hover-lift animate-fade-in-up stagger-3">
-                    <CardHeader className="px-4 pb-2">
-                        <CardTitle className="text-sm text-gradient">
-                            Top Payers
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-2">
-                        <ResponsiveContainer
-                            width="100%"
-                            height={Math.max(120, payerData.length * 48)}
-                        >
-                            <BarChart
-                                data={payerData}
-                                layout="vertical"
-                                margin={{
-                                    top: 4,
-                                    right: 24,
-                                    left: 8,
-                                    bottom: 0,
-                                }}
-                            >
-                                <XAxis
-                                    type="number"
-                                    tickFormatter={(v) =>
-                                        `${(v / 1000).toFixed(0)}k`
-                                    }
-                                    tick={{
-                                        fontSize: 10,
-                                        fill: "var(--muted-foreground)",
-                                    }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <YAxis
-                                    type="category"
-                                    dataKey="name"
-                                    tick={{
-                                        fontSize: 11,
-                                        fill: "var(--muted-foreground)",
-                                    }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                    width={60}
-                                />
-                                <RechartsTooltip
-                                    formatter={(value: number) => [
-                                        formatVND(value),
-                                        "Paid",
-                                    ]}
-                                    contentStyle={tooltipStyle}
-                                />
-                                <Bar dataKey="total" radius={[0, 4, 4, 0]}>
-                                    {payerData.map((_, i) => (
-                                        <Cell
-                                            key={i}
-                                            fill={
-                                                PAYER_COLORS[
-                                                    i % PAYER_COLORS.length
-                                                ]
-                                            }
-                                        />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                        <div className="mt-3 space-y-2 px-2">
-                            {payerData.map((p, i) => (
-                                <div
-                                    key={p.id}
-                                    className="flex items-center gap-2 py-1 rounded-md transition-colors duration-150 hover:bg-muted/30 px-1"
-                                >
-                                    <MemberAvatar
-                                        name={p.name}
-                                        size="sm"
-                                        className="size-6 text-[9px]"
-                                    />
-                                    <span className="text-xs flex-1 font-medium">
-                                        {p.name}
-                                    </span>
-                                    <span className="text-xs font-semibold font-mono tabular-nums text-right">
-                                        {formatVND(p.total)}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground font-mono w-9 text-right tabular-nums">
-                                        {charts.totalAmount > 0
-                                            ? Math.round(
-                                                  (p.total /
-                                                      charts.totalAmount) *
-                                                      100,
-                                              )
-                                            : 0}
-                                        %
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+
+            <div className="animate-fade-in-up stagger-2">
+                <ChartLineMultiple
+                    data={data.months}
+                    year={data.selectedYear}
+                />
+            </div>
+
+            <div className="animate-fade-in-up stagger-3">
+                <div className="mb-2 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-gradient">
+                        12 months in {data.selectedYear}
+                    </h2>
+                    <Badge variant="secondary">
+                        {pluralize(data.yearOptions.length, "year")} with data
+                    </Badge>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {data.months.map((month) => (
+                        <MonthStatCard key={month.month} month={month} />
+                    ))}
+                </div>
+            </div>
         </div>
     );
 }

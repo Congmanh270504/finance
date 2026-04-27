@@ -6,5 +6,5 @@ export const metadata = { title: "Cài đặt | Finance" };
 export default async function SettingsPage() {
   const { data, isDemo } = await fetchSettingsPageData();
 
-  return <SettingsClient pageData={data} isDemo={isDemo} />;
+  return <SettingsClient profile={data.profile} isDemo={isDemo} />;
 }

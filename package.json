@@ -15,7 +15,7 @@
   "scripts": {
     "analyze": "next experimental-analyze",
     "build": "next build",
-    "db:seed:finance": "tsx scripts/seed-finance.ts",
+    "db:seed:finance": "tsx prisma/seed.ts",
     "dev": "next dev",
     "lint": "eslint .",
     "prisma:generate": "prisma generate",
@@ -76,7 +76,7 @@
     "react-dom": "19.2.3",
     "react-hook-form": "^7.73.1",
     "react-resizable-panels": "^2.1.7",
-    "recharts": "2.15.4",
+    "recharts": "^3.8.0",
     "shadcn": "^4.3.1",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.1",
@@ -105,8 +105,5 @@
       "@types/react": "19.2.7",
       "@types/react-dom": "19.2.3"
     }
-  },
-  "prisma": {
-    "seed": "tsx scripts/seed-finance.ts"
   }
 }

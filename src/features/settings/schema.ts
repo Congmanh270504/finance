@@ -1,10 +1,5 @@
 import { z } from "zod";
 
-export const socialLinkSchema = z.object({
-  label: z.string(),
-  value: z.string(),
-});
-
 export const settingHighlightSchema = z.object({
   label: z.string(),
   value: z.string(),
@@ -13,6 +8,7 @@ export const settingHighlightSchema = z.object({
 export const settingsNavItemSchema = z.object({
   id: z.string(),
   label: z.string(),
+  href: z.string().optional(),
   icon: z.enum([
     "user",
     "shield",
@@ -42,7 +38,8 @@ export const settingsNavSectionSchema = z.object({
 export const settingsProfileSchema = z.object({
   displayName: z.string(),
   username: z.string(),
-  accountTagline: z.string(),
+  nickname: z.string(),
+  phone: z.string(),
   avatarUrl: z.string().nullable().optional(),
   email: z.string(),
   emailHint: z.string(),
@@ -52,7 +49,6 @@ export const settingsProfileSchema = z.object({
   company: z.string(),
   location: z.string(),
   avatarTone: z.string(),
-  socialLinks: z.array(socialLinkSchema),
   highlights: z.array(settingHighlightSchema),
 });
 
@@ -60,7 +56,8 @@ export const settingsProfileUpdateSchema = settingsProfileSchema
   .pick({
     displayName: true,
     username: true,
-    accountTagline: true,
+    nickname: true,
+    phone: true,
     avatarUrl: true,
     email: true,
     bio: true,
@@ -69,12 +66,12 @@ export const settingsProfileUpdateSchema = settingsProfileSchema
     company: true,
     location: true,
     avatarTone: true,
-    socialLinks: true,
   })
   .extend({
     displayName: z.string().trim().min(1, "Name is required"),
     username: z.string().trim().min(1, "Username is required"),
-    accountTagline: z.string().trim().optional().or(z.literal("")),
+    nickname: z.string().trim().optional().or(z.literal("")),
+    phone: z.string().trim().optional().or(z.literal("")),
     avatarUrl: z.string().trim().optional().nullable().or(z.literal("")),
     email: z.string().trim().email("Email is invalid"),
     bio: z.string().trim().optional().or(z.literal("")),
@@ -83,13 +80,26 @@ export const settingsProfileUpdateSchema = settingsProfileSchema
     company: z.string().trim().optional().or(z.literal("")),
     location: z.string().trim().optional().or(z.literal("")),
     avatarTone: z.string().trim().optional().or(z.literal("")),
-    socialLinks: z.array(
-      socialLinkSchema.extend({
-        label: z.string().trim().min(1),
-        value: z.string().trim().optional().or(z.literal("")),
-      }),
-    ),
   });
+
+export const settingsPasswordUpdateSchema = z
+  .object({
+    currentPassword: z.string().optional(),
+    newPassword: z.string().trim().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().trim().min(6, "Confirm password is required"),
+  })
+  .refine((value) => value.newPassword === value.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+export const settingsStatusUpdateSchema = z.object({
+  isActive: z.boolean(),
+});
+
+export const settingsDeleteAccountSchema = z.object({
+  confirmationEmail: z.string().trim().email("Email is invalid"),
+});
 
 export const settingsPageDataSchema = z.object({
   profile: settingsProfileSchema,

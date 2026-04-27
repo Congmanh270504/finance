@@ -22,6 +22,7 @@ async function findUserByEmail(email: string) {
                         select: {
                             name: true,
                             currency: true,
+                            imgUrl: true,
                         },
                     },
                 },
@@ -46,6 +47,7 @@ async function findUserById(id: string) {
                         select: {
                             name: true,
                             currency: true,
+                            imgUrl: true,
                         },
                     },
                 },
@@ -162,6 +164,7 @@ export async function getCurrentUserContext() {
             groupId: membership.groupId,
             name: membership.Group.name,
             currency: membership.Group.currency,
+            imgUrl: membership.Group.imgUrl,
         })),
         primaryGroupId,
         primaryGroupName: primaryGroup?.name ?? "Finance",

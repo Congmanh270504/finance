@@ -36,11 +36,16 @@ type PaginationConfig = {
     onPageChange?: (page: number) => void;
 };
 
-type DataTableAction = Omit<React.ComponentProps<typeof Button>, "children"> & {
+type DataTableButtonAction = Omit<
+    React.ComponentProps<typeof Button>,
+    "children"
+> & {
     label: React.ReactNode;
     icon?: React.ReactNode;
     key?: React.Key;
 };
+
+type DataTableAction = DataTableButtonAction | React.ReactNode;
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -57,6 +62,17 @@ interface DataTableProps<TData, TValue> {
     enableSearch?: boolean;
     searchPlaceholder?: string;
     actions?: DataTableAction[];
+}
+
+function isDataTableButtonAction(
+    action: DataTableAction,
+): action is DataTableButtonAction {
+    return (
+        !!action &&
+        typeof action === "object" &&
+        !React.isValidElement(action) &&
+        "label" in action
+    );
 }
 
 const normalizeSearchValue = (value: unknown): string => {
@@ -167,16 +183,29 @@ export function DataTable<TData, TValue>({
                     <div />
                 )}
                 <div className="flex flex-wrap items-center gap-2">
-                    {actions.map(({ label, icon, key, ...buttonProps }) => (
-                        <Button
-                            key={key ?? String(label)}
-                            type="button"
-                            {...buttonProps}
-                        >
-                            {icon}
-                            {label}
-                        </Button>
-                    ))}
+                    {actions.map((action, index) => {
+                        if (isDataTableButtonAction(action)) {
+                            const { label, icon, key, ...buttonProps } =
+                                action;
+
+                            return (
+                                <Button
+                                    key={key ?? `action-${index}`}
+                                    type="button"
+                                    {...buttonProps}
+                                >
+                                    {icon}
+                                    {label}
+                                </Button>
+                            );
+                        }
+
+                        return (
+                            <React.Fragment key={`action-${index}`}>
+                                {action}
+                            </React.Fragment>
+                        );
+                    })}
                     <DataTableViewOptions table={table} />
                 </div>
             </div>
