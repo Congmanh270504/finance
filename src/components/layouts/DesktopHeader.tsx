@@ -25,6 +25,7 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "../ui/breadcrumb";
+import { DynamicBreadcrumb } from "../dynamic-breadcrumb";
 
 function formatNotificationTime(value: string) {
     const date = new Date(value);
@@ -169,19 +170,7 @@ export function DesktopHeader({
                         orientation="vertical"
                         className="mx-2 data-[orientation=vertical]:h-4 self-center!"
                     />
-                    <Breadcrumb>
-                        <BreadcrumbList>
-                            <BreadcrumbItem className="hidden md:block">
-                                <BreadcrumbLink href="#">
-                                    Build Your Application
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator className="hidden md:block" />
-                            <BreadcrumbItem>
-                                <BreadcrumbPage>Data Fetching</BreadcrumbPage>
-                            </BreadcrumbItem>
-                        </BreadcrumbList>
-                    </Breadcrumb>
+                    <DynamicBreadcrumb />
                 </div>
                 <div className=" flex items-center gap-1">
                     <div className="relative" ref={containerRef}>
@@ -190,7 +179,7 @@ export function DesktopHeader({
                             variant="ghost"
                             size="icon-sm"
                             className="relative rounded-full"
-                            aria-label="Thong bao"
+                            aria-label="Notifications"
                             aria-expanded={open}
                             onClick={handleToggleNotifications}
                         >
@@ -207,10 +196,10 @@ export function DesktopHeader({
                                 <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
                                     <div>
                                         <p className="text-sm font-semibold">
-                                            Thong bao
+                                            Notifications
                                         </p>
                                         <p className="text-xs text-muted-foreground">
-                                            {unreadCount} chua doc
+                                            {unreadCount} unread
                                         </p>
                                     </div>
                                     <Button
@@ -228,7 +217,7 @@ export function DesktopHeader({
                                         ) : (
                                             <CheckIcon className="size-3" />
                                         )}
-                                        Da doc
+                                        Mark as Read
                                     </Button>
                                 </div>
 
@@ -236,11 +225,11 @@ export function DesktopHeader({
                                     {isLoading ? (
                                         <div className="flex items-center justify-center gap-2 px-4 py-8 text-sm text-muted-foreground">
                                             <Loader2Icon className="size-4 animate-spin" />
-                                            Dang tai thong bao
+                                            Loading notifications...
                                         </div>
                                     ) : items.length === 0 ? (
                                         <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                                            Chua co thong bao
+                                            No notifications
                                         </div>
                                     ) : (
                                         items.map((notification) => (
@@ -270,9 +259,7 @@ export function DesktopHeader({
                                                         {notification.title}
                                                     </span>
                                                     <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                                                        {
-                                                            notification.message
-                                                        }
+                                                        {notification.message}
                                                     </span>
                                                     <span className="mt-1 block text-[11px] text-muted-foreground">
                                                         {formatNotificationTime(

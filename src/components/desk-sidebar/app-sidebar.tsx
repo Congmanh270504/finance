@@ -15,6 +15,7 @@ import {
     Settings2Icon,
     TerminalIcon,
     TerminalSquareIcon,
+    CircleDollarSign,
 } from "lucide-react";
 import { NavMain } from "@/components/desk-sidebar/nav-main";
 import { NavProjects } from "@/components/desk-sidebar/nav-projects";
@@ -71,38 +72,38 @@ function buildNavMainItems(recentExpenseGroups: RecentExpenseGroupItem[]) {
 
 const data = {
     navSecondary: [
-        {
-            title: "Add Expense",
-            url: "/expense",
-            icon: <SendIcon />,
-        },
-        {
-            title: "Expense Table",
-            url: "/expense",
-            icon: <ReceiptTextIcon />,
-        },
-        {
-            title: "Help",
-            url: "/settings",
-            icon: <LifeBuoyIcon />,
-        },
+        // {
+        //     title: "Add Expense",
+        //     url: "/expense",
+        //     icon: <SendIcon />,
+        // },
+        // {
+        //     title: "Expense Table",
+        //     url: "/expense",
+        //     icon: <ReceiptTextIcon />,
+        // },
+        // {
+        //     title: "Help",
+        //     url: "/settings",
+        //     icon: <LifeBuoyIcon />,
+        // },
     ],
     projects: [
         {
-            name: "Da Lat Travel Group",
-            url: "/",
-            icon: <FrameIcon />,
+            name: "Settlements",
+            url: "/settlements",
+            icon: <CircleDollarSign />,
         },
-        {
-            name: "Track Debts",
-            url: "/history",
-            icon: <PieChartIcon />,
-        },
-        {
-            name: "MocData Profile",
-            url: "/settings",
-            icon: <MapIcon />,
-        },
+        // {
+        //     name: "Track Debts",
+        //     url: "/history",
+        //     icon: <PieChartIcon />,
+        // },
+        // {
+        //     name: "MocData Profile",
+        //     url: "/settings",
+        //     icon: <MapIcon />,
+        // },
     ],
 };
 
@@ -129,15 +130,19 @@ export function AppSidebar({
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/">
-                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                                    <TerminalIcon className="size-4" />
+                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg border ">
+                                    <img
+                                        src="/logo.png"
+                                        alt="Gia Pham Logo"
+                                        className="h-8 w-auto rounded object-contain"
+                                    />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-medium">
-                                        {groupName}
+                                        CrewCash
                                     </span>
                                     <span className="truncate text-xs">
-                                        {memberCount} members
+                                        Expense management for groups
                                     </span>
                                 </div>
                             </Link>

@@ -9,9 +9,9 @@ export type SidebarQuickAccessLink = SidebarNavLink & {
 
 export const dashboardSidebarLinks: SidebarNavLink[] = [
     { title: "Overview", url: "/" },
-    { title: "Expense", url: "/expense" },
-    { title: "Debt History", url: "/my-ledger-history" },
-    { title: "Expense History", url: "/history" },
+    { title: "Group Expenses", url: "/expense" },
+    // { title: "Settlements", url: "/settlements" },
+    { title: "Expense History", url: "/my-ledger-history" },
     { title: "Insights", url: "/insights" },
 ];
 

@@ -30,7 +30,7 @@ const chartConfig = {
         color: "var(--chart-5)",
     },
     paidByMeAmount: {
-        label: "Paid by me",
+        label: "Paid back",
         color: "var(--chart-3)",
     },
 } satisfies ChartConfig;
@@ -78,8 +78,7 @@ export function ChartLineMultiple({
                     Spending chart for {year}
                 </CardTitle>
                 <CardDescription>
-                    Track total spending, your share, and the amount you paid
-                    by month.
+                    Track total spending, your share, and repayments by month.
                 </CardDescription>
             </CardHeader>
             <CardContent>

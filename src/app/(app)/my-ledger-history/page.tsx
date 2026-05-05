@@ -3,7 +3,7 @@ import { getMyLedgerHistory } from "@/features/my-ledger-history/action";
 import { MyLedgerHistoryClient } from "@/features/my-ledger-history/components/MyLedgerHistoryClient";
 
 export const metadata: Metadata = {
-    title: "Lịch sử công nợ của tôi | Finance",
+    title: "My Ledger History | Finance",
 };
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

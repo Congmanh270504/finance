@@ -10,7 +10,7 @@ export type InsightsMonthStat = {
 
 export type InsightsYearOption = {
     year: number;
-    expenseCount: number;
+    activityCount: number;
 };
 
 export type InsightsSummary = {

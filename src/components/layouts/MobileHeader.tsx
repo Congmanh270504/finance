@@ -57,7 +57,7 @@ export function MobileHeader({
                 >
                     <Link href="/members">
                         <BellIcon className="size-4" />
-                        <span className="sr-only">Thong bao</span>
+                        <span className="sr-only">Notifications</span>
                     </Link>
                 </Button>
                 <Button
@@ -68,7 +68,7 @@ export function MobileHeader({
                 >
                     <Link href="/settings">
                         <SettingsIcon className="size-4" />
-                        <span className="sr-only">Cài đặt</span>
+                        <span className="sr-only">Settings</span>
                     </Link>
                 </Button>
             </div>

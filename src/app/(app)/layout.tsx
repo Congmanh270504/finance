@@ -26,7 +26,7 @@ function PageFrame({ children }: { children: React.ReactNode }) {
                 fill
                 aria-hidden
                 priority
-                className="opacity-20"
+                className="opacity-20 dark:opacity-30 dark:brightness-125 dark:saturate-110"
             />
 
             <Image

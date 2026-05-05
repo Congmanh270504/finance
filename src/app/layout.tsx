@@ -53,6 +53,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
     title: "Finance",
     description: "Quan ly chi tieu nhom",
+    icons: {
+        icon: "/logo.png",
+    },
 };
 
 export default async function RootLayout({

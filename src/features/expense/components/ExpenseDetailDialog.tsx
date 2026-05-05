@@ -44,15 +44,15 @@ export function ExpenseDetailDialog({
                         <DialogHeader>
                             <DialogTitle>{expense.title}</DialogTitle>
                             <DialogDescription>
-                                Xem nhanh chi tiết khoản chi và phần chia cho
-                                từng thành viên.
+                                Quick details about this expense. You can also
+                                edit or delete it
                             </DialogDescription>
                         </DialogHeader>
 
                         <div className="grid gap-3 sm:grid-cols-2">
                             <div className="rounded-xl border bg-muted/30 p-4">
                                 <p className="text-xs text-muted-foreground">
-                                    Số tiền
+                                    Total
                                 </p>
                                 <p className="mt-1 text-2xl font-semibold">
                                     {formatCurrency(expense.amount)}
@@ -60,7 +60,7 @@ export function ExpenseDetailDialog({
                             </div>
                             <div className="rounded-xl border bg-muted/30 p-4">
                                 <p className="text-xs text-muted-foreground">
-                                    Người trả
+                                    Payer
                                 </p>
                                 <p className="mt-1 text-base font-semibold">
                                     {expense.paidByName}
@@ -68,7 +68,7 @@ export function ExpenseDetailDialog({
                             </div>
                             <div className="rounded-xl border bg-muted/30 p-4">
                                 <p className="text-xs text-muted-foreground">
-                                    Thời điểm chi
+                                    Occurrence Date
                                 </p>
                                 <p className="mt-1 text-sm font-medium">
                                     {formatDate(expense.occurredAt)}
@@ -76,7 +76,7 @@ export function ExpenseDetailDialog({
                             </div>
                             <div className="rounded-xl border bg-muted/30 p-4">
                                 <p className="text-xs text-muted-foreground">
-                                    Kiểu chia
+                                    Sharing Strategy
                                 </p>
                                 <div className="mt-1">
                                     <Badge variant="secondary">
@@ -93,10 +93,10 @@ export function ExpenseDetailDialog({
                         <div className="space-y-3">
                             <div>
                                 <p className="text-sm font-semibold">
-                                    Thành viên tham gia
+                                    Participants
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    {expense.shareCount} người
+                                    {expense.shareCount} people
                                 </p>
                             </div>
                             <div className="space-y-2">
@@ -112,7 +112,7 @@ export function ExpenseDetailDialog({
                                             {share.memberId ===
                                             expense.paidByMemberId ? (
                                                 <p className="text-xs text-muted-foreground">
-                                                    Người thanh toán
+                                                    Payer
                                                 </p>
                                             ) : null}
                                         </div>
@@ -127,7 +127,7 @@ export function ExpenseDetailDialog({
                         {expense.notes ? (
                             <div className="rounded-xl border bg-muted/30 p-4">
                                 <p className="text-xs text-muted-foreground">
-                                    Ghi chú
+                                    Note
                                 </p>
                                 <p className="mt-1 text-sm">{expense.notes}</p>
                             </div>

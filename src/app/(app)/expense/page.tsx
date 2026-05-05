@@ -7,7 +7,7 @@ import {
 } from "@/features/expense/action";
 import { getCurrentUserContext } from "@/lib/auth";
 
-export const metadata: Metadata = { title: "Expense | Chi tieu nhom" };
+export const metadata: Metadata = { title: "Expense | Group Expense Tracker" };
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -27,9 +27,7 @@ export default async function ExpensePage({
         getExpenseFormGroups(),
     ]);
     const initialGroupId =
-        context?.primaryGroupId ??
-        groupsResult.groups[0]?.id ??
-        "";
+        context?.primaryGroupId ?? groupsResult.groups[0]?.id ?? "";
     const membersResult = initialGroupId
         ? await getExpenseFormMembers(initialGroupId)
         : { members: [], source: "database" as const };

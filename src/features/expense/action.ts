@@ -212,10 +212,10 @@ async function createExpenseNotifications(
             groupId: expense.groupId,
             expenseId: expense.id,
             type: NotificationType.EXPENSE_CREATED,
-            title: "Expense moi",
-            message: `${expense.paidBy.name} da tra ${formatNotificationAmount(
+            title: "New Expense ",
+            message: `${expense.paidBy.name} paid ${formatNotificationAmount(
                 expense.amount,
-            )} cho "${expense.title}" trong ${expense.group.name}.`,
+            )} for "${expense.title}" in ${expense.group.name}.`,
             href: "/expense",
         })),
     });
@@ -432,8 +432,7 @@ export async function createExpenseAction(
         return {
             success: false,
             error:
-                parsed.error.issues[0]?.message ??
-                "Expense data is invalid.",
+                parsed.error.issues[0]?.message ?? "Expense data is invalid.",
         };
     }
 
@@ -460,7 +459,9 @@ export async function createExpenseAction(
             });
 
             if (groupMembers.length !== memberIds.length) {
-                throw new Error("One or more selected members do not belong to this group.");
+                throw new Error(
+                    "One or more selected members do not belong to this group.",
+                );
             }
 
             const expense = await tx.expense.create({
@@ -543,9 +544,9 @@ export async function createExpenseAction(
     }
 }
 
-export async function deleteExpenseAction(
-    rawInput: { id: string },
-): Promise<ExpenseActionResponse> {
+export async function deleteExpenseAction(rawInput: {
+    id: string;
+}): Promise<ExpenseActionResponse> {
     const input = expenseDeleteSchema.parse(rawInput);
 
     try {

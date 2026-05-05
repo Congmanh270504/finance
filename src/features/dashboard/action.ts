@@ -233,11 +233,11 @@ export async function getDashboardOverviewAction(): Promise<DashboardOverviewDat
         }
 
         if (entry.toMemberId === currentMemberId) {
-            bucket.income += entry.deltaAmount;
+            bucket.income += Math.abs(entry.deltaAmount);
         }
 
         if (entry.fromMemberId === currentMemberId) {
-            bucket.expense += entry.deltaAmount;
+            bucket.expense += Math.abs(entry.deltaAmount);
         }
     }
 

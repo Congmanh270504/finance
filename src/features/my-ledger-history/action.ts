@@ -127,12 +127,13 @@ export async function getMyLedgerHistory(
     ]);
 
     const items: MyLedgerHistoryItem[] = rawItems.map((item) => {
-        const direction =
-            item.toMemberId === userId ? "increase" : "decrease";
+        const signedChange =
+            item.toMemberId === userId ? item.deltaAmount : -item.deltaAmount;
+        const direction = signedChange >= 0 ? "increase" : "decrease";
         const counterpartyName =
-            direction === "increase"
-                ? item.fromMemberNameSnapshot
-                : item.toMemberNameSnapshot;
+            item.fromMemberId === userId
+                ? item.toMemberNameSnapshot
+                : item.fromMemberNameSnapshot;
 
         return {
             ...item,
@@ -140,23 +141,25 @@ export async function getMyLedgerHistory(
             groupCurrency: item.group.currency,
             counterpartyName,
             direction,
-            signedAmount:
-                direction === "increase"
-                    ? item.deltaAmount
-                    : -Math.abs(item.deltaAmount),
+            signedAmount: signedChange,
             sourceLabel: buildSourceLabel(item),
         };
     });
 
     const summary = rawSummary.reduce(
         (accumulator, item) => {
-            if (item.toMemberId === userId) {
-                accumulator.increaseAmount += item.deltaAmount;
-                accumulator.netAmount += item.deltaAmount;
+            const signedChange =
+                item.toMemberId === userId
+                    ? item.deltaAmount
+                    : -item.deltaAmount;
+
+            if (signedChange >= 0) {
+                accumulator.increaseAmount += signedChange;
             } else {
-                accumulator.decreaseAmount += item.deltaAmount;
-                accumulator.netAmount -= item.deltaAmount;
+                accumulator.decreaseAmount += Math.abs(signedChange);
             }
+
+            accumulator.netAmount += signedChange;
 
             return accumulator;
         },

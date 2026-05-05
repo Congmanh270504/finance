@@ -8,6 +8,7 @@ import {
     getFilteredRowModel,
     getSortedRowModel,
     SortingState,
+    type Table as TanstackTable,
     useReactTable,
 } from "@tanstack/react-table";
 import * as React from "react";
@@ -46,6 +47,11 @@ type DataTableButtonAction = Omit<
 };
 
 type DataTableAction = DataTableButtonAction | React.ReactNode;
+type DataTableActionContext<TData> = {
+    table: TanstackTable<TData>;
+    globalFilter: string;
+    setGlobalFilter: React.Dispatch<React.SetStateAction<string>>;
+};
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -61,7 +67,11 @@ interface DataTableProps<TData, TValue> {
     stickyCellClassName?: string;
     enableSearch?: boolean;
     searchPlaceholder?: string;
-    actions?: DataTableAction[];
+    actions?:
+        | DataTableAction[]
+        | ((
+              context: DataTableActionContext<TData>,
+          ) => DataTableAction[]);
 }
 
 function isDataTableButtonAction(
@@ -87,9 +97,7 @@ const normalizeSearchValue = (value: unknown): string => {
     }
 
     if (typeof value === "object") {
-        return Object.values(value)
-            .map(normalizeSearchValue)
-            .join(" ");
+        return Object.values(value).map(normalizeSearchValue).join(" ");
     }
 
     return String(value)
@@ -149,6 +157,10 @@ export function DataTable<TData, TValue>({
 
     const stickySet = new Set(stickyColumns ?? []);
     const stickyClampClass = "max-w-[200px] sm:max-w-none truncate";
+    const resolvedActions =
+        typeof actions === "function"
+            ? actions({ table, globalFilter, setGlobalFilter })
+            : actions;
 
     const metaPagination = meta as PaginationConfig | undefined;
     const paginationConfig = pagination ?? metaPagination;
@@ -182,11 +194,10 @@ export function DataTable<TData, TValue>({
                 ) : (
                     <div />
                 )}
-                <div className="flex flex-wrap items-center gap-2">
-                    {actions.map((action, index) => {
+                <div className=" flex justify-between items-center gap-2">
+                    {resolvedActions.map((action, index) => {
                         if (isDataTableButtonAction(action)) {
-                            const { label, icon, key, ...buttonProps } =
-                                action;
+                            const { label, icon, key, ...buttonProps } = action;
 
                             return (
                                 <Button
@@ -211,11 +222,11 @@ export function DataTable<TData, TValue>({
             </div>
 
             <Table className="min-w-full">
-                <TableHeader className="sticky top-0 z-20 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm bg-linear-to-r from-blue-50 to-yellow-50">
+                <TableHeader className="sticky top-0 z-20 bg-slate-50/95 bg-linear-to-r from-blue-50 to-yellow-50  backdrop-blur-sm dark:border-zinc-800/80 dark:bg-zinc-950/95">
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow
                             key={headerGroup.id}
-                            className="hover:bg-primary/10 bg-primary/5 border-b border-gray-200"
+                            className="hover:bg-primary/10 bg-primary/5 border-b border-gray-200 dark:border-zinc-800/70 dark:bg-zinc-700 dark:hover:bg-zinc-900/80"
                         >
                             {headerGroup.headers.map((header) => (
                                 <TableHead
@@ -228,7 +239,7 @@ export function DataTable<TData, TValue>({
                                                   stickyHeaderClassName,
                                               )
                                             : undefined,
-                                        "font-semibold text-gray-700",
+                                        "font-semibold text-gray-700 dark:text-zinc-300",
                                     )}
                                 >
                                     {header.isPlaceholder
@@ -260,7 +271,7 @@ export function DataTable<TData, TValue>({
                                 }
                                 className={cn(
                                     onRowClick ? "cursor-pointer" : undefined,
-                                    "border-gray-100 odd:bg-white even:bg-blue-50 hover:bg-blue-100/60",
+                                    "border-gray-100 odd:bg-white even:bg-blue-50 hover:bg-blue-100/60 dark:border-zinc-800/70 dark:odd:bg-zinc-950 dark:even:bg-zinc-900/40 dark:hover:bg-zinc-900/80",
                                     typeof rowClassName === "function"
                                         ? rowClassName(row.original)
                                         : rowClassName,
@@ -277,7 +288,7 @@ export function DataTable<TData, TValue>({
                                                       stickyCellClassName,
                                                   )
                                                 : undefined,
-                                            "text-gray-900",
+                                            "text-zinc-900 dark:text-zinc-100",
                                         )}
                                     >
                                         {flexRender(

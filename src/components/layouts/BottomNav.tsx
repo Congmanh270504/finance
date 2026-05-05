@@ -8,6 +8,7 @@ import {
     HomeIcon,
     PlusCircleIcon,
     SettingsIcon,
+    WalletCardsIcon,
     UsersIcon,
     type LucideIcon,
 } from "lucide-react";
@@ -29,9 +30,11 @@ const NAV_ITEMS: NavItem[] = [
         icon: PlusCircleIcon,
         primary: true,
     },
+    { href: "/settlements", label: "Settlements", icon: WalletCardsIcon },
     { href: "/groups", label: "Groups", icon: UsersIcon },
     // { href: "/settings", label: "Settings", icon: SettingsIcon },
-    { href: "/insights", label: "Insights", icon: BarChart2Icon },
+    // { href: "/insights", label: "Insights", icon: BarChart2Icon },
+    // { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 export function BottomNav() {

@@ -98,7 +98,7 @@ function MonthStatCard({ month }: { month: InsightsMonthStat }) {
                 </div>
                 <div className="flex items-center justify-between gap-3">
                     <span className="text-xs text-muted-foreground">
-                        Paid by me
+                        Paid back
                     </span>
                     <span className="font-mono text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
                         {formatCompactVND(month.paidByMeAmount)}
@@ -133,7 +133,7 @@ export function InsightsClient({ data }: { data: InsightsYearlyStats }) {
                         Spending Statistics
                     </h2>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                        Analyze spending across all 12 months of the year.
+                        Analyze spending and debt payments across the year.
                     </p>
                 </div>
 
@@ -151,7 +151,7 @@ export function InsightsClient({ data }: { data: InsightsYearlyStats }) {
                                     key={option.year}
                                     value={String(option.year)}
                                 >
-                                    {option.year} ({option.expenseCount})
+                                    {option.year} ({option.activityCount})
                                 </SelectItem>
                             ))}
                         </SelectContent>

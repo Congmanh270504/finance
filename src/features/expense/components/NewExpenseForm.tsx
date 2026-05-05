@@ -40,7 +40,6 @@ import type {
     ExpenseFormGroup,
     ExpenseFormMember,
 } from "@/features/expense/types";
-import { MemberAvatar } from "@/features/finance/components/shared/MemberAvatar";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -534,7 +533,7 @@ export function NewExpenseForm({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 showCloseButton={false}
-                className="max-h-[90vh] overflow-hidden gap-0 rounded-lg p-0 md:max-w-5xl"
+                className="max-h-[95vh] md:max-h-[90vh] overflow-hidden gap-0 rounded-lg p-0 md:max-w-5xl"
             >
                 <DialogHeader className="rounded-t-lg bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-5">
                     <DialogTitle className="text-3xl font-bold text-white">
@@ -566,8 +565,8 @@ export function NewExpenseForm({
                         onSubmit={onSubmit}
                         className="flex max-h-[calc(90vh-112px)] flex-col"
                     >
-                        <div className="overflow-y-auto px-6 pt-6 pb-4 no-scrollbar grid grid-cols-2 gap-6">
-                            <div className="grid gap-4 grid-cols-1 md:grid-cols-3 border rounded-2xl p-4">
+                        <div className="overflow-y-auto px-6 pt-6 pb-4 no-scrollbar grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                                 <div className="space-y-2">
                                     <Label>Group</Label>
                                     <Controller
@@ -579,7 +578,7 @@ export function NewExpenseForm({
                                                 onValueChange={field.onChange}
                                             >
                                                 <SelectTrigger
-                                                    className="w-full"
+                                                    className="w-full h-8"
                                                     aria-invalid={
                                                         !!errors.groupId
                                                     }
@@ -623,6 +622,7 @@ export function NewExpenseForm({
                                         </p>
                                     ) : null}
                                 </div>
+
                                 <div className="space-y-2">
                                     <Controller
                                         control={control}
@@ -656,6 +656,7 @@ export function NewExpenseForm({
                                         )}
                                     />
                                 </div>
+
                                 <div className="space-y-2">
                                     <Label htmlFor="expense-amount">
                                         Amount
@@ -715,7 +716,7 @@ export function NewExpenseForm({
                                                 }
                                             >
                                                 <SelectTrigger
-                                                    className="w-full"
+                                                    className="w-full h-8"
                                                     aria-invalid={
                                                         !!errors.paidByMemberId
                                                     }
@@ -755,7 +756,7 @@ export function NewExpenseForm({
                                                     syncMembersToForm(members);
                                                 }}
                                             >
-                                                <SelectTrigger className="w-full">
+                                                <SelectTrigger className="w-full h-8">
                                                     <SelectValue placeholder="Select a split mode" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -770,7 +771,8 @@ export function NewExpenseForm({
                                         )}
                                     />
                                 </div>
-                                <div className="space-y-2 col-span-3">
+
+                                <div className="space-y-2 sm:col-span-2 xl:col-span-3">
                                     <Label htmlFor="expense-notes">Notes</Label>
                                     <Input
                                         id="expense-notes"
@@ -785,8 +787,8 @@ export function NewExpenseForm({
                                 </div>
                             </div>
 
-                            <div className=" rounded-2xl border bg-muted/20">
-                                <div className="flex flex-wrap items-start justify-between gap-3 px-4 py-4">
+                            <div className="rounded-2xl border bg-muted/20">
+                                <div className="grid grid-cols-1 items-start gap-3 px-4 py-4 sm:grid-cols-2 xl:grid-cols-3">
                                     <div>
                                         <div className="flex items-center gap-2">
                                             <ReceiptTextIcon className="size-4 text-emerald-600" />

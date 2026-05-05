@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getInsightsYearlyStatsAction } from "@/features/insights/action";
 import { InsightsClient } from "@/features/insights/components/InsightsClient";
 
-export const metadata = { title: "Thong ke | Chi tieu nhom" };
+export const metadata = { title: "Insights | Insights Your Expenses" };
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 

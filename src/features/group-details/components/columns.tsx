@@ -108,7 +108,7 @@ export function getGroupLedgerHistoryColumns({
                 </div>
             ),
             cell: ({ row }) => (
-                <div className="max-w-[220px] truncate text-center text-sm">
+                <div className=" truncate text-center text-sm">
                     {row.original.sourceLabel}
                 </div>
             ),

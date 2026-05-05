@@ -8,6 +8,7 @@ async function main() {
         await prisma.balanceLedgerHistory.deleteMany();
         await prisma.balanceLedger.deleteMany();
         await prisma.notification.deleteMany();
+        await prisma.settlement.deleteMany();
 
         console.log("DELETE SUCCESSFULLY");
     } catch (error) {

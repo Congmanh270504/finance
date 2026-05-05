@@ -45,16 +45,16 @@ function resolveSelectedYear(rawYear: string | undefined, years: number[]) {
     return years[0] ?? new Date().getFullYear();
 }
 
-function buildYearOptions(expenseDates: Date[]): InsightsYearOption[] {
+function buildYearOptions(activityDates: Date[]): InsightsYearOption[] {
     const countByYear = new Map<number, number>();
 
-    for (const date of expenseDates) {
+    for (const date of activityDates) {
         const year = date.getUTCFullYear();
         countByYear.set(year, (countByYear.get(year) ?? 0) + 1);
     }
 
     return Array.from(countByYear.entries())
-        .map(([year, expenseCount]) => ({ year, expenseCount }))
+        .map(([year, activityCount]) => ({ year, activityCount }))
         .sort((left, right) => right.year - left.year);
 }
 
@@ -98,9 +98,25 @@ export async function getInsightsYearlyStatsAction(params?: {
             occurredAt: "desc",
         },
     });
+    const settlementDates = await prisma.settlement.findMany({
+        where: {
+            groupId: {
+                in: groupIds,
+            },
+        },
+        select: {
+            settledAt: true,
+        },
+        orderBy: {
+            settledAt: "desc",
+        },
+    });
 
     const yearOptions = buildYearOptions(
-        expenseDates.map((expense) => expense.occurredAt),
+        [
+            ...expenseDates.map((expense) => expense.occurredAt),
+            ...settlementDates.map((settlement) => settlement.settledAt),
+        ],
     );
     const selectedYear = resolveSelectedYear(
         params?.year,
@@ -135,6 +151,24 @@ export async function getInsightsYearlyStatsAction(params?: {
         },
         orderBy: [{ occurredAt: "asc" }, { createdAt: "asc" }],
     });
+    const settlements = await prisma.settlement.findMany({
+        where: {
+            groupId: {
+                in: groupIds,
+            },
+            settledAt: {
+                gte: yearStart,
+                lt: nextYearStart,
+            },
+        },
+        select: {
+            fromMemberId: true,
+            toMemberId: true,
+            amount: true,
+            settledAt: true,
+        },
+        orderBy: [{ settledAt: "asc" }, { createdAt: "asc" }],
+    });
 
     const groupSetsByMonth = Array.from({ length: 12 }, () => new Set<string>());
     const months = buildEmptyMonths();
@@ -145,10 +179,18 @@ export async function getInsightsYearlyStatsAction(params?: {
 
         month.totalAmount += expense.amount;
         month.myShareAmount += expense.splitShares[0]?.shareAmount ?? 0;
-        month.paidByMeAmount +=
-            expense.paidByMemberId === currentMemberId ? expense.amount : 0;
         month.expenseCount += 1;
         groupSetsByMonth[monthIndex].add(expense.groupId);
+    }
+
+    for (const settlement of settlements) {
+        if (settlement.fromMemberId !== currentMemberId) {
+            continue;
+        }
+
+        const monthIndex = settlement.settledAt.getUTCMonth();
+        const month = months[monthIndex];
+        month.paidByMeAmount += settlement.amount;
     }
 
     months.forEach((month, index) => {

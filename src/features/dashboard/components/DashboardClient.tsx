@@ -7,6 +7,7 @@ import {
     BarChart3Icon,
     LayoutGridIcon,
     ReceiptTextIcon,
+    WalletCardsIcon,
     TrendingDownIcon,
     TrendingUpIcon,
     WalletIcon,
@@ -60,6 +61,10 @@ function QuickAccessIcon({ item }: { item: DashboardQuickAccessItem }) {
 
     if (item.url.includes("expense")) {
         return <ReceiptTextIcon className="size-4" />;
+    }
+
+    if (item.url.includes("settlement")) {
+        return <WalletCardsIcon className="size-4" />;
     }
 
     if (item.url.includes("insights")) {
