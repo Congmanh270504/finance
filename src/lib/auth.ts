@@ -11,9 +11,7 @@ const loginSchema = z.object({
 
 async function findUserByEmail(email: string) {
     return prisma.user.findUnique({
-        where: {
-            email,
-        },
+        where: { email },
         include: {
             User_Groups: {
                 select: {
@@ -26,9 +24,7 @@ async function findUserByEmail(email: string) {
                         },
                     },
                 },
-                orderBy: {
-                    createdAt: "asc",
-                },
+                orderBy: { createdAt: "asc" },
             },
         },
     });
@@ -36,9 +32,7 @@ async function findUserByEmail(email: string) {
 
 async function findUserById(id: string) {
     return prisma.user.findUnique({
-        where: {
-            id,
-        },
+        where: { id },
         include: {
             User_Groups: {
                 select: {
@@ -51,22 +45,16 @@ async function findUserById(id: string) {
                         },
                     },
                 },
-                orderBy: {
-                    createdAt: "asc",
-                },
+                orderBy: { createdAt: "asc" },
             },
         },
     });
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-    session: {
-        strategy: "jwt",
-    },
+    session: { strategy: "jwt" },
     trustHost: true,
-    pages: {
-        signIn: "/login",
-    },
+    pages: { signIn: "/login" },
     providers: [
         Credentials({
             credentials: {
@@ -76,15 +64,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             authorize: async (credentials) => {
                 const parsed = loginSchema.safeParse(credentials);
 
-                if (!parsed.success) {
-                    return null;
-                }
+                if (!parsed.success) return null;
 
                 const user = await findUserByEmail(parsed.data.email);
 
-                if (!user || !user.isActive) {
-                    return null;
-                }
+                if (!user || !user.isActive) return null;
 
                 const bootstrapPassword =
                     process.env.AUTH_BOOTSTRAP_PASSWORD?.trim() ?? "";
@@ -93,9 +77,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     : bootstrapPassword.length > 0 &&
                       parsed.data.password === bootstrapPassword;
 
-                if (!passwordMatches) {
-                    return null;
-                }
+                if (!passwordMatches) return null;
 
                 return {
                     id: user.id,
@@ -112,7 +94,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token.id = user.id;
                 token.picture = user.image;
             }
-
             return token;
         },
         session({ session, token }) {
@@ -121,7 +102,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 session.user.image =
                     typeof token.picture === "string" ? token.picture : null;
             }
-
             return session;
         },
     },
@@ -130,13 +110,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 export async function getCurrentUser() {
     const session = await auth();
 
-    if (!session?.user?.id && !session?.user?.email) {
-        return null;
-    }
+    if (!session?.user?.id && !session?.user?.email) return null;
 
-    if (session.user.id) {
-        return findUserById(session.user.id);
-    }
+    if (session.user.id) return findUserById(session.user.id);
 
     return findUserByEmail(session.user.email ?? "");
 }
@@ -144,17 +120,13 @@ export async function getCurrentUser() {
 export async function getCurrentUserContext() {
     const user = await getCurrentUser();
 
-    if (!user) {
-        return null;
-    }
+    if (!user) return null;
 
     const primaryGroup = user.User_Groups[0]?.Group;
     const primaryGroupId = user.User_Groups[0]?.groupId ?? null;
     const primaryGroupMemberCount = primaryGroupId
         ? await prisma.user_Groups.count({
-              where: {
-                  groupId: primaryGroupId,
-              },
+              where: { groupId: primaryGroupId },
           })
         : 0;
 

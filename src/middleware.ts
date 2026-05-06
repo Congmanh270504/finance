@@ -1,7 +1,10 @@
-import { auth } from "@/lib/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "@/lib/auth.config";
 import { NextResponse } from "next/server";
 
 const publicPaths = new Set(["/login"]);
+
+const { auth } = NextAuth(authConfig);
 
 export default auth(function middleware(request) {
     const { nextUrl } = request;
