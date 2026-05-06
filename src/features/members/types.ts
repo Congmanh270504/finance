@@ -20,6 +20,15 @@ export type MemberManagementItem = User & {
     oweAmount: number;
     receiveAmount: number;
     ledgerCount: number;
+    groupLedgerStats: Record<
+        string,
+        {
+            oweAmount: number;
+            receiveAmount: number;
+            netAmount: number;
+            ledgerCount: number;
+        }
+    >;
 };
 
 export type MemberGroupItem = GroupCrudItem;

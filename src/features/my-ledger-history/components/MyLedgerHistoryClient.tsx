@@ -28,13 +28,14 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { LayoutGrid, LayoutList, SlidersHorizontal } from "lucide-react";
 import { createMyLedgerHistoryColumns } from "@/features/my-ledger-history/components/columns";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type {
     MyLedgerHistoryItem,
     MyLedgerHistoryResult,
 } from "@/features/my-ledger-history/types";
 
 function formatCurrency(value: number) {
-    return new Intl.NumberFormat("vi-VN").format(value) + " â‚«";
+    return new Intl.NumberFormat("vi-VN").format(value) + " đ";
 }
 
 export function MyLedgerHistoryClient({
@@ -46,7 +47,10 @@ export function MyLedgerHistoryClient({
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const columns = React.useMemo(() => createMyLedgerHistoryColumns(), []);
-    const [viewMode, setViewMode] = React.useState<"table" | "card">("table");
+    const isMobile = useIsMobile();
+    const [viewMode, setViewMode] = React.useState<"table" | "card">(
+        isMobile ? "card" : "table",
+    );
     const [isFilterSheetOpen, setIsFilterSheetOpen] = React.useState(false);
 
     function replaceParams(updates: Record<string, string | null | undefined>) {
@@ -147,7 +151,7 @@ export function MyLedgerHistoryClient({
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-sm font-medium text-foreground/75">
-                            TÄƒng cÃ´ng ná»£
+                            Income
                         </CardTitle>
                         <CardDescription className="text-2xl font-semibold leading-tight text-foreground">{`+ ${formatCurrency(data.summary.increaseAmount)}`}</CardDescription>
                     </CardHeader>
@@ -156,7 +160,7 @@ export function MyLedgerHistoryClient({
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-sm font-medium text-foreground/75">
-                            Giáº£m cÃ´ng ná»£
+                            Expenditure
                         </CardTitle>
                         <CardDescription className="text-2xl font-semibold leading-tight text-foreground">{`-${formatCurrency(data.summary.decreaseAmount)}`}</CardDescription>
                     </CardHeader>
@@ -165,9 +169,9 @@ export function MyLedgerHistoryClient({
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-sm font-medium text-foreground/75">
-                            RÃ²ng
+                            Net Amount
                         </CardTitle>
-                        <CardDescription className="text-2xl font-semibold leading-tight text-foreground">{`${data.summary.netAmount >= 0 ? "+" : "-"} ${formatCurrency(data.summary.netAmount)}`}</CardDescription>
+                        <CardDescription className="text-2xl font-semibold leading-tight text-foreground">{`${data.summary.netAmount >= 0 ? "+" : ""} ${formatCurrency(data.summary.netAmount)}`}</CardDescription>
                     </CardHeader>
                 </Card>
             </div>
@@ -178,7 +182,7 @@ export function MyLedgerHistoryClient({
                         <DataTable
                             columns={columns}
                             data={data.items}
-                            emptyMessage="ChÆ°a cÃ³ lá»‹ch sá»­ cÃ´ng ná»£ phÃ¹ há»£p."
+                            emptyMessage="No items found."
                             pagination={data.pagination}
                             enableSearch={true}
                             actions={() => [
@@ -211,7 +215,7 @@ export function MyLedgerHistoryClient({
                             <div className="space-y-3 pb-3">
                                 {data.items.length === 0 ? (
                                     <p className="py-6 text-center text-sm italic text-muted-foreground">
-                                        ChÆ°a cÃ³ lá»‹ch sá»­ cÃ´ng ná»£ phÃ¹ há»£p.
+                                        No items found.
                                     </p>
                                 ) : (
                                     data.items.map((item) => (

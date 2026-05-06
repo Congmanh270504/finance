@@ -34,6 +34,7 @@ import type {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Pencil, Trash2, Wallet } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat("vi-VN").format(amount) + " VND";
@@ -173,7 +174,10 @@ export function SettlementClient({ data }: { data: SettlementListResult }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [searchInput, setSearchInput] = React.useState(data.filters.query);
-    const [viewMode, setViewMode] = React.useState<"table" | "card">("table");
+    const isMobile = useIsMobile();
+    const [viewMode, setViewMode] = React.useState<"table" | "card">(
+        isMobile ? "card" : "table",
+    );
     const [createOpen, setCreateOpen] = React.useState(false);
     const [editSettlement, setEditSettlement] =
         React.useState<SettlementRow | null>(null);
@@ -268,6 +272,40 @@ export function SettlementClient({ data }: { data: SettlementListResult }) {
             ? Math.ceil(data.pagination.total / data.pagination.limit)
             : 0;
 
+    const viewModeToggle = (
+        <div className="flex gap-1 rounded-lg border border-border bg-muted/40 p-1">
+            <Button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={cn(
+                    "flex items-center justify-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-all",
+                    viewMode === "table"
+                        ? "bg-background text-primary shadow-sm"
+                        : "bg-transparent text-muted-foreground hover:bg-muted",
+                )}
+                variant="ghost"
+                size="sm"
+            >
+                <LayoutList className="h-3.5 w-3.5" />
+                Table
+            </Button>
+            <Button
+                type="button"
+                onClick={() => setViewMode("card")}
+                className={cn(
+                    "flex items-center justify-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-all",
+                    viewMode === "card"
+                        ? "bg-background text-primary shadow-sm"
+                        : "bg-transparent text-muted-foreground hover:bg-muted",
+                )}
+                variant="ghost"
+                size="sm"
+            >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Card
+            </Button>
+        </div>
+    );
     return (
         <div className="space-y-4 px-4 pb-6 pt-3">
             <div className="flex flex-col gap-3 rounded-2xl border bg-background/80 p-4 shadow-sm">
@@ -284,32 +322,6 @@ export function SettlementClient({ data }: { data: SettlementListResult }) {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className={cn(
-                                "gap-1.5 md:hidden",
-                                viewMode === "table" && "border-primary/30",
-                            )}
-                            onClick={() => setViewMode("table")}
-                        >
-                            <LayoutList className="size-4" />
-                            Table
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className={cn(
-                                "gap-1.5 md:hidden",
-                                viewMode === "card" && "border-primary/30",
-                            )}
-                            onClick={() => setViewMode("card")}
-                        >
-                            <LayoutGrid className="size-4" />
-                            Card
-                        </Button>
                         <Button
                             type="button"
                             size="sm"
@@ -355,6 +367,9 @@ export function SettlementClient({ data }: { data: SettlementListResult }) {
                         onRowClick={setViewSettlement}
                         enableSearch={true}
                         actions={[
+                            <div key="view-mode-toggle" className="md:hidden">
+                                {viewModeToggle}
+                            </div>,
                             <Select
                                 key="group-filter"
                                 value={data.filters.groupId || "all"}

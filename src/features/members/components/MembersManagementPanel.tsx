@@ -140,9 +140,18 @@ export function MembersManagementPanel({
                             </Link>
                         </Button>
                     ),
-                    items: filteredMembers.filter((member) =>
-                        member.linkedGroupIds.includes(group.id),
-                    ),
+                    items: filteredMembers
+                        .filter((member) => member.linkedGroupIds.includes(group.id))
+                        .map((member) => {
+                            const perGroupStats = member.groupLedgerStats[group.id];
+                            return {
+                                ...member,
+                                oweAmount: perGroupStats?.oweAmount ?? 0,
+                                receiveAmount: perGroupStats?.receiveAmount ?? 0,
+                                netAmount: perGroupStats?.netAmount ?? 0,
+                                ledgerCount: perGroupStats?.ledgerCount ?? 0,
+                            };
+                        }),
                 }))
                 .filter((group) => group.items.length > 0),
         [data.groups, filteredMembers, groupFilter],
@@ -310,6 +319,7 @@ export function MembersManagementPanel({
                     oweAmount: 0,
                     receiveAmount: 0,
                     ledgerCount: 0,
+                    groupLedgerStats: {},
                 };
 
                 onMembersChange([newMember, ...data.members]);

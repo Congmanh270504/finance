@@ -24,7 +24,7 @@ type MemberColumnsArgs = {
 };
 
 function formatVND(amount: number) {
-    return `${new Intl.NumberFormat("vi-VN").format(amount)} d`;
+    return `${new Intl.NumberFormat("vi-VN").format(amount)} đ`;
 }
 
 function SortableHeader({

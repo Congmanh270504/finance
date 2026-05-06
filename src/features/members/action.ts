@@ -19,7 +19,10 @@ import type {
 } from "@/features/members/types";
 import prisma from "@/lib/prisma";
 
-type LedgerLite = Pick<BalanceLedger, "fromMemberId" | "toMemberId" | "amount">;
+type LedgerLite = Pick<
+    BalanceLedger,
+    "groupId" | "fromMemberId" | "toMemberId" | "amount"
+>;
 type UserGroupLinkLite = Pick<User_Groups, "userId" | "groupId" | "createdAt">;
 
 function normalizeOptionalText(value?: string | null) {
@@ -57,6 +60,39 @@ function computeMemberStats(ledgers: LedgerLite[]) {
         creditor.receiveAmount += ledger.amount;
         creditor.ledgerCount += 1;
         stats.set(ledger.toMemberId, creditor);
+    }
+
+    return stats;
+}
+
+function computeMemberStatsByGroup(ledgers: LedgerLite[]) {
+    const stats = new Map<
+        string,
+        Map<string, { oweAmount: number; receiveAmount: number; ledgerCount: number }>
+    >();
+
+    for (const ledger of ledgers) {
+        const groupStats = stats.get(ledger.groupId) ?? new Map();
+
+        const debtor = groupStats.get(ledger.fromMemberId) ?? {
+            oweAmount: 0,
+            receiveAmount: 0,
+            ledgerCount: 0,
+        };
+        debtor.oweAmount += ledger.amount;
+        debtor.ledgerCount += 1;
+        groupStats.set(ledger.fromMemberId, debtor);
+
+        const creditor = groupStats.get(ledger.toMemberId) ?? {
+            oweAmount: 0,
+            receiveAmount: 0,
+            ledgerCount: 0,
+        };
+        creditor.receiveAmount += ledger.amount;
+        creditor.ledgerCount += 1;
+        groupStats.set(ledger.toMemberId, creditor);
+
+        stats.set(ledger.groupId, groupStats);
     }
 
     return stats;
@@ -101,6 +137,7 @@ function buildManagementData(
     const groupMap = new Map(groups.map((group) => [group.id, group]));
     const linkedGroupMap = buildLinkedGroupMap(userGroups);
     const stats = computeMemberStats(ledgers);
+    const statsByGroup = computeMemberStatsByGroup(ledgers);
 
     const members: MemberManagementItem[] = users
         .map((member) => {
@@ -113,6 +150,28 @@ function buildManagementData(
             const memberStats = stats.get(member.id);
             const oweAmount = memberStats?.oweAmount ?? 0;
             const receiveAmount = memberStats?.receiveAmount ?? 0;
+            const groupLedgerStats = linkedGroupIds.reduce<
+                Record<
+                    string,
+                    {
+                        oweAmount: number;
+                        receiveAmount: number;
+                        netAmount: number;
+                        ledgerCount: number;
+                    }
+                >
+            >((accumulator, groupId) => {
+                const perGroupStats = statsByGroup.get(groupId)?.get(member.id);
+                const groupOweAmount = perGroupStats?.oweAmount ?? 0;
+                const groupReceiveAmount = perGroupStats?.receiveAmount ?? 0;
+                accumulator[groupId] = {
+                    oweAmount: groupOweAmount,
+                    receiveAmount: groupReceiveAmount,
+                    netAmount: groupReceiveAmount - groupOweAmount,
+                    ledgerCount: perGroupStats?.ledgerCount ?? 0,
+                };
+                return accumulator;
+            }, {});
 
             return {
                 ...member,
@@ -126,6 +185,7 @@ function buildManagementData(
                 receiveAmount,
                 netAmount: receiveAmount - oweAmount,
                 ledgerCount: memberStats?.ledgerCount ?? 0,
+                groupLedgerStats,
             };
         })
         .sort((left, right) => left.name.localeCompare(right.name, "vi"));
@@ -190,6 +250,7 @@ function buildDemoManagementData(): MembersManagementData {
 
     const ledgers: LedgerLite[] = financeV1Fixtures.balancesSummary.ledger.map(
         (ledger) => ({
+            groupId: demoGroup.id,
             fromMemberId: ledger.fromMemberId,
             toMemberId: ledger.toMemberId,
             amount: ledger.amount,
@@ -254,6 +315,7 @@ async function buildMemberItemById(
                 OR: [{ fromMemberId: memberId }, { toMemberId: memberId }],
             },
             select: {
+                groupId: true,
                 fromMemberId: true,
                 toMemberId: true,
                 amount: true,
@@ -309,6 +371,7 @@ async function buildMemberItemsByIds(
                 ],
             },
             select: {
+                groupId: true,
                 fromMemberId: true,
                 toMemberId: true,
                 amount: true,
@@ -343,6 +406,7 @@ export async function getMembersManagementData(): Promise<{
             }),
             prisma.balanceLedger.findMany({
                 select: {
+                    groupId: true,
                     fromMemberId: true,
                     toMemberId: true,
                     amount: true,

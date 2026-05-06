@@ -689,11 +689,6 @@ export function NewExpenseForm({
                                         aria-invalid={!!errors.amountInput}
                                         className="text-base font-semibold tabular-nums"
                                     />
-                                    <p className="text-xs text-muted-foreground">
-                                        {amount > 0
-                                            ? formatCurrency(amount)
-                                            : "Enter the total expense amount"}
-                                    </p>
                                     {errors.amountInput ? (
                                         <p className="text-sm text-destructive">
                                             {errors.amountInput.message}
@@ -788,47 +783,53 @@ export function NewExpenseForm({
                             </div>
 
                             <div className="rounded-2xl border bg-muted/20">
-                                <div className="grid grid-cols-1 items-start gap-3 px-4 py-4 sm:grid-cols-2 xl:grid-cols-3">
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <ReceiptTextIcon className="size-4 text-emerald-600" />
-                                            <p className="font-semibold">
-                                                Cost allocation
-                                            </p>
+                                <div className="p-4">
+                                    <div className="flex justify-between ">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <ReceiptTextIcon className="size-4 text-emerald-600" />
+                                                <p className="font-semibold">
+                                                    Cost allocation
+                                                </p>
+                                            </div>
                                         </div>
-                                        <p className="mt-1 text-sm text-muted-foreground">
-                                            After selecting a group, its members
-                                            will be loaded for splitting.
-                                        </p>
+
+                                        <div className="flex flex-wrap gap-2">
+                                            <Badge
+                                                variant="secondary"
+                                                className="tabular-nums"
+                                            >
+                                                {selectedParticipants.length}{" "}
+                                                people
+                                            </Badge>
+                                            <Badge
+                                                variant={
+                                                    allocationDiff === 0
+                                                        ? "secondary"
+                                                        : "outline"
+                                                }
+                                                className={cn(
+                                                    "tabular-nums",
+                                                    allocationDiff === 0
+                                                        ? "border-emerald-200 bg-emerald-100 text-emerald-700"
+                                                        : "border-amber-200 bg-amber-50 text-amber-700",
+                                                )}
+                                            >
+                                                {allocationDiff === 0
+                                                    ? "Balanced"
+                                                    : `Difference ${formatCurrency(
+                                                          Math.abs(
+                                                              allocationDiff,
+                                                          ),
+                                                      )}`}
+                                            </Badge>
+                                        </div>
                                     </div>
 
-                                    <div className="flex flex-wrap gap-2">
-                                        <Badge
-                                            variant="secondary"
-                                            className="tabular-nums"
-                                        >
-                                            {selectedParticipants.length} people
-                                        </Badge>
-                                        <Badge
-                                            variant={
-                                                allocationDiff === 0
-                                                    ? "secondary"
-                                                    : "outline"
-                                            }
-                                            className={cn(
-                                                "tabular-nums",
-                                                allocationDiff === 0
-                                                    ? "border-emerald-200 bg-emerald-100 text-emerald-700"
-                                                    : "border-amber-200 bg-amber-50 text-amber-700",
-                                            )}
-                                        >
-                                            {allocationDiff === 0
-                                                ? "Balanced"
-                                                : `Difference ${formatCurrency(
-                                                      Math.abs(allocationDiff),
-                                                  )}`}
-                                        </Badge>
-                                    </div>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        After selecting a group, its members
+                                        will be loaded for splitting.
+                                    </p>
                                 </div>
 
                                 <Separator />

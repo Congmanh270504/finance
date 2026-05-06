@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { DataTable } from "@/components/table/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,10 @@ export function GroupDetailClient({
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const [viewMode, setViewMode] = React.useState<"table" | "card">("table");
+    const isMobile = useIsMobile();
+    const [viewMode, setViewMode] = React.useState<"table" | "card">(
+        isMobile ? "card" : "table",
+    );
     const [isFilterSheetOpen, setIsFilterSheetOpen] = React.useState(false);
     const [selectedEntry, setSelectedEntry] =
         React.useState<GroupLedgerHistoryRow | null>(null);

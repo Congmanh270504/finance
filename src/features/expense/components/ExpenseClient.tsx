@@ -19,6 +19,7 @@ import { deleteExpenseAction } from "@/features/expense/action";
 import { ExpenseDetailDialog } from "@/features/expense/components/ExpenseDetailDialog";
 import { NewExpenseForm } from "@/features/expense/components/NewExpenseForm";
 import { getExpenseColumns } from "@/features/expense/components/columns";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type {
     ExpenseFormGroup,
     ExpenseListPagination,
@@ -58,7 +59,10 @@ export default function ExpenseClient({
     );
     const [deleteTarget, setDeleteTarget] = useState<ExpenseRow | null>(null);
     const [isPending, startTransition] = useTransition();
-    const [viewMode, setViewMode] = useState<"table" | "card">("table");
+    const isMobile = useIsMobile();
+    const [viewMode, setViewMode] = useState<"table" | "card">(
+        isMobile ? "card" : "table",
+    );
 
     const columns = getExpenseColumns({
         onView: setSelectedExpense,
