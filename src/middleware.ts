@@ -1,17 +1,12 @@
-import type { NextRequest } from "next/server";
+import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
 
 const publicPaths = new Set(["/login"]);
 
-export async function middleware(request: NextRequest) {
+export default auth(function middleware(request) {
     const { nextUrl } = request;
     const { pathname, search } = nextUrl;
-    const token = await getToken({
-        req: request,
-        secret: process.env.AUTH_SECRET,
-    });
-    const isLoggedIn = Boolean(token);
+    const isLoggedIn = Boolean(request.auth);
     const isPublicPath = publicPaths.has(pathname);
 
     if (isPublicPath && isLoggedIn) {
@@ -26,7 +21,7 @@ export async function middleware(request: NextRequest) {
     }
 
     return NextResponse.next();
-}
+});
 
 export const config = {
     matcher: [
