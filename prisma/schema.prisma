@@ -94,6 +94,7 @@ model Expense {
   title                  String
   amount                 Int
   shareStrategy          ShareStrategy          @default(EQUAL)
+  imgUrl                 String?
   notes                  String?
   occurredAt             DateTime               @default(now())
   createdAt              DateTime               @default(now())
@@ -150,6 +151,7 @@ model Settlement {
   fromMemberId           String                 @db.ObjectId
   toMemberId             String                 @db.ObjectId
   amount                 Int
+  imgUrl                 String?
   note                   String?
   settledAt              DateTime               @default(now())
   createdAt              DateTime               @default(now())

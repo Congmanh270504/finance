@@ -6,8 +6,6 @@ import {
     Clock3,
     LayoutGrid,
     LayoutList,
-    Search,
-    SlidersHorizontal,
     Users,
     WalletCards,
 } from "lucide-react";
@@ -24,7 +22,6 @@ import {
     CardTitle,
     OverviewCard,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
     Select,
     SelectContent,
@@ -32,13 +29,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-} from "@/components/ui/sheet";
 import { GroupLedgerHistoryDialog } from "@/features/group-details/components/GroupLedgerHistoryDialog";
 import { getGroupLedgerHistoryColumns } from "@/features/group-details/components/columns";
 import type {
@@ -69,9 +59,9 @@ export function GroupDetailClient({
     const [viewMode, setViewMode] = React.useState<"table" | "card">(
         isMobile ? "card" : "table",
     );
-    const [isFilterSheetOpen, setIsFilterSheetOpen] = React.useState(false);
     const [selectedEntry, setSelectedEntry] =
         React.useState<GroupLedgerHistoryRow | null>(null);
+    const resolvedViewMode = isMobile ? "card" : viewMode;
 
     const columns = React.useMemo(
         () =>
@@ -110,104 +100,70 @@ export function GroupDetailClient({
                 title: "Members",
                 value: detail.group.memberCount,
                 icon: Users,
+                className:
+                    "dark:border-white/10 dark:bg-slate-950/65 dark:text-slate-100 dark:shadow-[0_18px_50px_-28px_rgba(0,0,0,0.85)] dark:backdrop-blur-2xl dark-card-glass",
             },
             {
                 title: "Active Debts",
                 value: detail.group.currentLedgerCount,
                 icon: ArrowRightLeft,
+                className:
+                    "dark:border-white/10 dark:bg-slate-950/65 dark:text-slate-100 dark:shadow-[0_18px_50px_-28px_rgba(0,0,0,0.85)] dark:backdrop-blur-2xl dark-card-glass",
             },
             {
                 title: "Outstanding Total",
                 value: formatCurrency(detail.group.totalOutstanding),
                 icon: WalletCards,
+                className:
+                    "dark:border-white/10 dark:bg-slate-950/65 dark:text-slate-100 dark:shadow-[0_18px_50px_-28px_rgba(0,0,0,0.85)] dark:backdrop-blur-2xl dark-card-glass",
             },
             {
                 title: "History Events",
                 value: detail.group.historyEventCount,
                 icon: Clock3,
+                className:
+                    "dark:border-white/10 dark:bg-slate-950/65 dark:text-slate-100 dark:shadow-[0_18px_50px_-28px_rgba(0,0,0,0.85)] dark:backdrop-blur-2xl dark-card-glass",
             },
         ],
         [detail.group],
     );
 
-    const renderFilterControls = () => (
-        <>
-            <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                    defaultValue={detail.filters.query}
-                    className="pl-9"
-                    placeholder="Search by source, member, or note"
-                    onChange={(event) =>
-                        updateParams({
-                            query: event.target.value.trim() || null,
-                        })
-                    }
-                />
-            </div>
-
-            <Select
-                value={detail.filters.memberId || "all"}
-                onValueChange={(value) =>
-                    updateParams({
-                        memberId: value === "all" ? null : value,
-                    })
-                }
-            >
-                <SelectTrigger className="w-full md:w-[220px]">
-                    <SelectValue placeholder="Filter by member" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">All members</SelectItem>
-                    {detail.memberOptions.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                            {member.name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-
-            <Button
-                type="button"
-                variant="outline"
-                onClick={() =>
-                    updateParams({
-                        query: null,
-                        memberId: null,
-                    })
-                }
-            >
-                Clear filters
-            </Button>
-        </>
-    );
-
     return (
         <div className="space-y-5 px-4 pb-6 pt-4">
-            <Card className="overflow-hidden border-primary/10 bg-gradient-to-br from-white via-primary/5 to-white shadow-sm">
+            <Card className="overflow-hidden border-primary/10 bg-gradient-to-br from-white via-primary/5 to-white shadow-sm dark:border-white/10 dark:bg-slate-950/65 dark:text-slate-100 dark:shadow-[0_24px_64px_-28px_rgba(0,0,0,0.85)] dark:backdrop-blur-2xl dark-card-glass">
                 <CardContent className="p-5">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="space-y-3">
                             <div className="flex flex-wrap items-center gap-2">
-                                <Badge variant="outline">
+                                <Badge
+                                    variant="outline"
+                                    className="dark:border-white/15 dark:bg-white/10 dark:text-slate-100 dark:backdrop-blur"
+                                >
                                     {detail.group.currency}
                                 </Badge>
-                                <Badge variant="secondary">
+                                <Badge
+                                    variant="secondary"
+                                    className="dark:border-white/10 dark:bg-white/10 dark:text-slate-100 dark:backdrop-blur"
+                                >
                                     {detail.group.historyEventCount} events
                                 </Badge>
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold tracking-tight">
+                                <h1 className="text-2xl font-bold tracking-tight dark:text-slate-50">
                                     {detail.group.name}
                                 </h1>
-                                <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                                <p className="mt-1 max-w-2xl text-sm text-muted-foreground dark:text-slate-300/90">
                                     Track current balances and review every debt
                                     increase or decrease recorded in this group.
                                 </p>
                             </div>
                         </div>
 
-                        <Button asChild variant="outline">
+                        <Button
+                            asChild
+                            variant="outline"
+                            className="dark:border-white/15 dark:bg-white/10 dark:text-slate-100 dark:backdrop-blur dark:hover:bg-white/15"
+                        >
                             <Link href="/members">
                                 Back to member management
                             </Link>
@@ -216,48 +172,51 @@ export function GroupDetailClient({
                 </CardContent>
             </Card>
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4  md:grid-cols-2 xl:grid-cols-4">
                 {overviewCards.map((card) => (
-                    <OverviewCard key={card.title} data={card} />
+                    <OverviewCard
+                        key={card.title}
+                        data={card}
+                        className={card.className}
+                    />
                 ))}
             </div>
 
-            <Card className="border-primary/10 bg-white/90 shadow-sm">
+            <Card className="border-primary/10 bg-white/90 shadow-sm dark:border-white/10 dark:bg-slate-950/65 dark:text-slate-100 dark:shadow-[0_24px_64px_-28px_rgba(0,0,0,0.85)] dark:backdrop-blur-2xl dark-card-glass">
                 <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-3">
-                        <div>
-                            <CardTitle className="text-base">
-                                Current Balances
-                            </CardTitle>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                Snapshot showing who currently owes whom.
-                            </p>
-                        </div>
-                        <Badge variant="outline">
+                    <CardTitle className="flex items-center justify-between gap-2 text-base">
+                        Current Balances
+                        <Badge
+                            variant="outline"
+                            className="dark:border-white/15 dark:bg-white/10 dark:text-slate-100 dark:backdrop-blur"
+                        >
                             {detail.currentBalances.length} debt pairs
                         </Badge>
-                    </div>
+                    </CardTitle>
+                    <p className="mt-1 text-sm text-muted-foreground dark:text-slate-300/90">
+                        Snapshot showing who currently owes whom.
+                    </p>
                 </CardHeader>
                 <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {detail.currentBalances.length > 0 ? (
                         detail.currentBalances.map((balance) => (
                             <Card
                                 key={balance.id}
-                                className="border-border/70 bg-gradient-to-br from-background to-muted/30"
+                                className="border-border/70 bg-gradient-to-br from-background to-muted/30 dark:border-white/10 dark:bg-slate-950/45 dark:text-slate-100 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_18px_50px_-28px_rgba(0,0,0,0.9)] dark:backdrop-blur-xl dark-card-glass"
                             >
                                 <CardContent className="p-4">
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
-                                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground dark:text-slate-300/80">
                                                 Debtor
                                             </p>
                                             <p className="mt-1 font-semibold">
                                                 {balance.fromMemberName}
                                             </p>
                                         </div>
-                                        <ArrowRightLeft className="mt-1 size-4 text-muted-foreground" />
+                                        <ArrowRightLeft className="mt-1 size-4 text-muted-foreground dark:text-cyan-200/75" />
                                         <div className="text-right">
-                                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground dark:text-slate-300/80">
                                                 Creditor
                                             </p>
                                             <p className="mt-1 font-semibold">
@@ -266,11 +225,11 @@ export function GroupDetailClient({
                                         </div>
                                     </div>
 
-                                    <div className="mt-4 rounded-2xl bg-amber-50 px-3 py-2 text-center">
-                                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
+                                    <div className="mt-4 rounded-2xl bg-amber-50 px-3 py-2 text-center dark:border dark:border-white/10 dark:bg-gradient-to-br dark:from-amber-400/15 dark:to-cyan-400/10 dark:backdrop-blur-md">
+                                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700 dark:text-primary">
                                             Outstanding
                                         </p>
-                                        <p className="mt-1 text-lg font-bold text-amber-800 tabular-nums">
+                                        <p className="mt-1 text-lg font-bold text-amber-800 tabular-nums dark:text-primary">
                                             {formatCurrency(balance.amount)}
                                         </p>
                                     </div>
@@ -278,45 +237,44 @@ export function GroupDetailClient({
                             </Card>
                         ))
                     ) : (
-                        <div className="rounded-2xl border border-dashed border-border/80 bg-muted/10 p-6 text-sm text-muted-foreground sm:col-span-2 xl:col-span-3">
+                        <div className="rounded-2xl border border-dashed border-border/80 bg-muted/10 p-6 text-sm text-muted-foreground dark:border-white/15 dark:bg-white/8 dark:text-slate-300/80 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:col-span-2 xl:col-span-3">
                             This group currently has no outstanding balances.
                         </div>
                     )}
                 </CardContent>
             </Card>
 
-            <Card className="border-primary/10 bg-white/90 shadow-sm">
-                <CardHeader className="pb-3">
+            <Card className="border-primary/10 bg-white/90 shadow-sm dark:border-white/10 dark:bg-slate-950/65 dark:text-slate-100 dark:shadow-[0_24px_64px_-28px_rgba(0,0,0,0.85)] dark:backdrop-blur-2xl dark-card-glass">
+                <CardHeader className="">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                             <CardTitle className="text-base">
                                 Balance Change History
                             </CardTitle>
-                            <p className="mt-1 text-sm text-muted-foreground">
+                            <p className="mt-1 text-sm text-muted-foreground dark:text-slate-300/90">
                                 Each event is stored separately to explain how
                                 the current snapshot changed over time.
                             </p>
                         </div>
-                        <Badge variant="outline">
+                        <Badge
+                            variant="outline"
+                            className="max-sm:hidden dark:border-white/15 dark:bg-white/10 dark:text-slate-100 dark:backdrop-blur"
+                        >
                             {detail.pagination.total} results
                         </Badge>
                     </div>
 
-                    <div className="hidden gap-3 md:flex md:flex-row md:items-center">
-                        {renderFilterControls()}
-                    </div>
-
                     <div className="flex items-center justify-between gap-2 md:hidden">
-                        <div className="flex rounded-xl border border-border bg-muted/40 p-1">
+                        <div className="flex rounded-xl border border-border bg-muted/40 p-1 dark:border-white/10 dark:bg-white/10 dark:backdrop-blur">
                             <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
                                 className={[
                                     "rounded-lg px-3",
-                                    viewMode === "table"
-                                        ? "bg-background shadow-sm"
-                                        : "text-muted-foreground",
+                                    resolvedViewMode === "table"
+                                        ? "bg-background shadow-sm dark:bg-white/12 dark:text-slate-100"
+                                        : "text-muted-foreground dark:text-slate-300/70",
                                 ].join(" ")}
                                 onClick={() => setViewMode("table")}
                             >
@@ -328,9 +286,9 @@ export function GroupDetailClient({
                                 size="sm"
                                 className={[
                                     "rounded-lg px-3",
-                                    viewMode === "card"
-                                        ? "bg-background shadow-sm"
-                                        : "text-muted-foreground",
+                                    resolvedViewMode === "card"
+                                        ? "bg-background shadow-sm dark:bg-white/12 dark:text-slate-100"
+                                        : "text-muted-foreground dark:text-slate-300/70",
                                 ].join(" ")}
                                 onClick={() => setViewMode("card")}
                             >
@@ -338,22 +296,38 @@ export function GroupDetailClient({
                             </Button>
                         </div>
 
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsFilterSheetOpen(true)}
+                        <Select
+                            value={detail.filters.memberId || "all"}
+                            onValueChange={(value) =>
+                                updateParams({
+                                    memberId: value === "all" ? null : value,
+                                })
+                            }
                         >
-                            <SlidersHorizontal className="size-4" />
-                            Filters
-                        </Button>
+                            <SelectTrigger className="h-8 w-full md:w-[220px] dark:border-white/15 dark:bg-white/10 dark:text-slate-100 dark:backdrop-blur">
+                                <SelectValue placeholder="Filter by member" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All members</SelectItem>
+                                {detail.memberOptions.map((member) => (
+                                    <SelectItem
+                                        key={member.id}
+                                        value={member.id}
+                                    >
+                                        {member.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </CardHeader>
 
                 <CardContent className="space-y-4">
                     <div
                         className={
-                            viewMode === "card" ? "hidden md:block" : "block"
+                            resolvedViewMode === "card"
+                                ? "hidden md:block"
+                                : "block"
                         }
                     >
                         <DataTable
@@ -362,14 +336,43 @@ export function GroupDetailClient({
                             emptyMessage="No matching balance history found"
                             pagination={detail.pagination}
                             onRowClick={setSelectedEntry}
-                            enableSearch={false}
+                            enableSearch
+                            actions={[
+                                <Select
+                                    value={detail.filters.memberId || "all"}
+                                    onValueChange={(value) =>
+                                        updateParams({
+                                            memberId:
+                                                value === "all" ? null : value,
+                                        })
+                                    }
+                                    key="member-filter"
+                                >
+                                    <SelectTrigger className="h-8 w-full md:w-[220px] dark:border-white/15 dark:bg-white/10 dark:text-slate-100 dark:backdrop-blur">
+                                        <SelectValue placeholder="Filter by member" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All members
+                                        </SelectItem>
+                                        {detail.memberOptions.map((member) => (
+                                            <SelectItem
+                                                key={member.id}
+                                                value={member.id}
+                                            >
+                                                {member.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>,
+                            ]}
                         />
                     </div>
 
                     <div
                         className={[
                             "grid gap-3 md:hidden",
-                            viewMode === "card" ? "grid" : "hidden",
+                            resolvedViewMode === "card" ? "grid" : "hidden",
                         ].join(" ")}
                     >
                         {detail.history.length > 0 ? (
@@ -379,48 +382,45 @@ export function GroupDetailClient({
                                 return (
                                     <Card
                                         key={entry.id}
-                                        className="border-border/70 bg-gradient-to-br from-background to-muted/20"
+                                        className="border-border/70 bg-gradient-to-br from-background to-muted/20 dark:border-white/10 dark:bg-slate-950/45 dark:text-slate-100 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_18px_50px_-28px_rgba(0,0,0,0.9)] dark:backdrop-blur-xl dark-card-glass"
                                     >
                                         <CardContent className="space-y-3 p-4">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div>
+                                            <div className=" ">
+                                                <div className="flex items-start justify-between">
                                                     <p className="font-semibold">
                                                         {entry.fromMemberName}
                                                     </p>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        owes{" "}
-                                                        {entry.toMemberName}
-                                                    </p>
+
+                                                    <Badge
+                                                        variant={
+                                                            isIncrease
+                                                                ? "success"
+                                                                : "warning"
+                                                        }
+                                                    >
+                                                        {entry.type}
+                                                    </Badge>
                                                 </div>
-                                                <Badge
-                                                    variant={
-                                                        isIncrease
-                                                            ? "success"
-                                                            : "warning"
-                                                    }
-                                                >
-                                                    {entry.type}
-                                                </Badge>
+                                                <p className="text-sm text-muted-foreground dark:text-slate-300/80">
+                                                    owes {entry.toMemberName}
+                                                </p>
                                             </div>
 
-                                            <div>
-                                                <p className="text-sm font-medium">
+                                            <div className="grid grid-cols-2 items-center gap-2">
+                                                <p className="col-span-2 text-sm font-medium">
                                                     {entry.sourceLabel}
                                                 </p>
-                                                <p className="mt-1 text-xs text-muted-foreground">
+                                                <p className="mt-1 text-xs text-muted-foreground dark:text-slate-300/80">
                                                     {formatDateTime(
                                                         entry.occurredAt,
                                                     )}
                                                 </p>
-                                            </div>
-
-                                            <div className="flex items-center justify-between gap-3">
                                                 <div
                                                     className={[
-                                                        "text-sm font-semibold tabular-nums",
+                                                        "mt-1 text-sm font-semibold tabular-nums",
                                                         isIncrease
-                                                            ? "text-emerald-700"
-                                                            : "text-amber-700",
+                                                            ? "text-emerald-700 dark:text-emerald-300"
+                                                            : "text-amber-700 dark:text-amber-200",
                                                     ].join(" ")}
                                                 >
                                                     {isIncrease ? "+" : "-"}
@@ -430,11 +430,14 @@ export function GroupDetailClient({
                                                         ),
                                                     )}
                                                 </div>
+                                            </div>
 
+                                            <div className="flex items-center justify-between gap-3">
                                                 <Button
                                                     type="button"
                                                     variant="outline"
                                                     size="sm"
+                                                    className="dark:border-white/15 dark:bg-white/10 dark:text-slate-100 dark:backdrop-blur dark:hover:bg-white/15"
                                                     onClick={() =>
                                                         setSelectedEntry(entry)
                                                     }
@@ -447,7 +450,7 @@ export function GroupDetailClient({
                                 );
                             })
                         ) : (
-                            <div className="rounded-2xl border border-dashed border-border/80 bg-muted/10 p-6 text-sm text-muted-foreground">
+                            <div className="rounded-2xl border border-dashed border-border/80 bg-muted/10 p-6 text-sm text-muted-foreground dark:border-white/15 dark:bg-white/8 dark:text-slate-300/80 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                                 No balance history matches the current filters.
                             </div>
                         )}
@@ -464,20 +467,6 @@ export function GroupDetailClient({
                     }
                 }}
             />
-
-            <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
-                <SheetContent side="bottom" className="rounded-t-3xl">
-                    <SheetHeader>
-                        <SheetTitle>History Filters</SheetTitle>
-                        <SheetDescription>
-                            Narrow the list by member or related content.
-                        </SheetDescription>
-                    </SheetHeader>
-                    <div className="space-y-3 p-4 pt-0">
-                        {renderFilterControls()}
-                    </div>
-                </SheetContent>
-            </Sheet>
         </div>
     );
 }

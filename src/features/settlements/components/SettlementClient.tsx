@@ -6,7 +6,6 @@ import {
     LayoutGrid,
     LayoutList,
     PlusIcon,
-    SearchIcon,
     WalletCardsIcon,
 } from "lucide-react";
 import DeleteDialog from "@/components/delete-dialog";
@@ -14,7 +13,6 @@ import { ActionIconButton } from "@/components/action-icon-button";
 import { DataTable } from "@/components/table/DataTable";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
     Select,
     SelectContent,
@@ -35,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Pencil, Trash2, Wallet } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat("vi-VN").format(amount) + " VND";
@@ -175,9 +174,7 @@ export function SettlementClient({ data }: { data: SettlementListResult }) {
     const searchParams = useSearchParams();
     const [searchInput, setSearchInput] = React.useState(data.filters.query);
     const isMobile = useIsMobile();
-    const [viewMode, setViewMode] = React.useState<"table" | "card">(
-        isMobile ? "card" : "table",
-    );
+    const [viewMode, setViewMode] = React.useState<"table" | "card">("table");
     const [createOpen, setCreateOpen] = React.useState(false);
     const [editSettlement, setEditSettlement] =
         React.useState<SettlementRow | null>(null);
@@ -190,6 +187,8 @@ export function SettlementClient({ data }: { data: SettlementListResult }) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setSearchInput(data.filters.query);
     }, [data.filters.query]);
+
+    const resolvedViewMode = isMobile ? "card" : viewMode;
 
     React.useEffect(() => {
         const handle = window.setTimeout(() => {
@@ -279,7 +278,7 @@ export function SettlementClient({ data }: { data: SettlementListResult }) {
                 onClick={() => setViewMode("table")}
                 className={cn(
                     "flex items-center justify-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-all",
-                    viewMode === "table"
+                    resolvedViewMode === "table"
                         ? "bg-background text-primary shadow-sm"
                         : "bg-transparent text-muted-foreground hover:bg-muted",
                 )}
@@ -294,7 +293,7 @@ export function SettlementClient({ data }: { data: SettlementListResult }) {
                 onClick={() => setViewMode("card")}
                 className={cn(
                     "flex items-center justify-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-all",
-                    viewMode === "card"
+                    resolvedViewMode === "card"
                         ? "bg-background text-primary shadow-sm"
                         : "bg-transparent text-muted-foreground hover:bg-muted",
                 )}
@@ -321,16 +320,12 @@ export function SettlementClient({ data }: { data: SettlementListResult }) {
                         </p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                            type="button"
-                            size="sm"
-                            className="gap-1.5"
+                    <div className="max-sm:hidden flex flex-wrap items-center gap-2">
+                        <LiquidMetalButton
+                            label="Add payment"
+                            icon={<PlusIcon className="size-4" />}
                             onClick={() => setCreateOpen(true)}
-                        >
-                            <PlusIcon className="size-4" />
-                            Add payment
-                        </Button>
+                        />
                     </div>
                 </div>
 
@@ -353,7 +348,7 @@ export function SettlementClient({ data }: { data: SettlementListResult }) {
                 </div>
             </div>
 
-            {viewMode === "table" ? (
+            {resolvedViewMode === "table" ? (
                 <div className="overflow-hidden rounded-2xl border bg-background shadow-sm">
                     <DataTable
                         columns={columns}
@@ -399,6 +394,23 @@ export function SettlementClient({ data }: { data: SettlementListResult }) {
                 </div>
             ) : (
                 <div className="space-y-3">
+                    <div className="flex items-center justify-end gap-2">
+                        {/* <Button
+                            type="button"
+                            size="sm"
+                            className="gap-1.5 ml-auto"
+                            onClick={() => setCreateOpen(true)}
+                        >
+                            <PlusIcon className="size-4" />
+                            Add payment
+                        </Button> */}
+                        <LiquidMetalButton
+                            label="Add payment"
+                            icon={<PlusIcon className="size-4" />}
+                            onClick={() => setCreateOpen(true)}
+                        />
+                    </div>
+
                     {data.items.length === 0 ? (
                         <Card className="border border-dashed py-10 text-center text-sm text-muted-foreground">
                             No matching payments found

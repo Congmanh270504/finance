@@ -25,6 +25,7 @@ import type {
     ExpenseListPagination,
     ExpenseRow,
 } from "@/features/expense/types";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat("vi-VN").format(amount) + " ₫";
@@ -156,7 +157,7 @@ export default function ExpenseClient({
                 </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+            <div className="overflow-hidden rounded-2xl border shadow-sm">
                 {viewMode === "table" ? (
                     <DataTable
                         columns={columns}
@@ -176,7 +177,7 @@ export default function ExpenseClient({
                     />
                 ) : (
                     <>
-                        <div className="flex items-center justify-between gap-2 p-2">
+                        <div className="flex  items-center justify-between gap-2 p-2">
                             {viewModeToggle}
                             <Button
                                 size="sm"

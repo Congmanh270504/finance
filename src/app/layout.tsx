@@ -9,6 +9,7 @@ import {
 } from "next/font/google";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -66,6 +67,7 @@ export default async function RootLayout({
     return (
         <html
             lang="vi"
+            suppressHydrationWarning
             className={cn(
                 beVietnam.variable,
                 inter.variable,
@@ -77,10 +79,12 @@ export default async function RootLayout({
             )}
         >
             <body className="min-h-full flex flex-col font-sans antialiased">
-                <TooltipProvider>
-                    {children}
-                    <Toaster position="top-center" richColors />
-                </TooltipProvider>
+                <ThemeProvider>
+                    <TooltipProvider>
+                        {children}
+                        <Toaster position="top-center" richColors />
+                    </TooltipProvider>
+                </ThemeProvider>
             </body>
         </html>
     );

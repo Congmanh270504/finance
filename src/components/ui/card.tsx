@@ -164,18 +164,18 @@ function OverviewCard({ data, className }: OverviewCardProps) {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,theme(colors.primary/0.12),transparent_38%)]" />
             <CardHeader className="relative flex-row items-start justify-between space-y-0 pb-3">
                 <div className="space-y-1">
-                    <CardDescription className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground/80">
+                    <CardDescription className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground/80 dark:text-white">
                         {data.title}
                     </CardDescription>
-                    <CardTitle className="text-3xl font-semibold tracking-tight">
+                    <CardTitle className="text-3xl font-semibold tracking-tight flex items-center gap-2">
+                        {Icon ? (
+                            <div className="flex size-11 items-center justify-center rounded-2xl border border-border/70 bg-background/80 shadow-sm">
+                                <Icon className="size-5 text-primary" />
+                            </div>
+                        ) : null}
                         {data.value}
                     </CardTitle>
                 </div>
-                {Icon ? (
-                    <div className="flex size-11 items-center justify-center rounded-2xl border border-border/70 bg-background/80 shadow-sm">
-                        <Icon className="size-5 text-primary" />
-                    </div>
-                ) : null}
             </CardHeader>
             {data.description || data.hint || data.badge ? (
                 <CardContent className="relative space-y-3">

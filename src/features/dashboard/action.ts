@@ -1,5 +1,6 @@
 "use server";
 
+import { BalanceLedgerHistoryType } from "@prisma/client";
 import { dashboardQuickAccessLinks } from "@/components/desk-sidebar/nav-data";
 import type {
     DashboardLedgerItem,
@@ -164,6 +165,12 @@ export async function getDashboardOverviewAction(): Promise<DashboardOverviewDat
                 occurredAt: {
                     gte: startDate,
                 },
+                type: {
+                    in: [
+                        BalanceLedgerHistoryType.EXPENSE_SHARE,
+                        BalanceLedgerHistoryType.EXPENSE_DELETION_REVERSAL,
+                    ],
+                },
                 OR: [
                     { fromMemberId: currentMemberId },
                     { toMemberId: currentMemberId },
@@ -233,11 +240,11 @@ export async function getDashboardOverviewAction(): Promise<DashboardOverviewDat
         }
 
         if (entry.toMemberId === currentMemberId) {
-            bucket.income += Math.abs(entry.deltaAmount);
+            bucket.income += entry.deltaAmount;
         }
 
         if (entry.fromMemberId === currentMemberId) {
-            bucket.expense += Math.abs(entry.deltaAmount);
+            bucket.expense += entry.deltaAmount;
         }
     }
 

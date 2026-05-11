@@ -33,6 +33,7 @@ import type {
     MyLedgerHistoryItem,
     MyLedgerHistoryResult,
 } from "@/features/my-ledger-history/types";
+import { NumberCounter } from "@/components/ui/number-counter";
 
 function formatCurrency(value: number) {
     return new Intl.NumberFormat("vi-VN").format(value) + " đ";
@@ -48,10 +49,9 @@ export function MyLedgerHistoryClient({
     const searchParams = useSearchParams();
     const columns = React.useMemo(() => createMyLedgerHistoryColumns(), []);
     const isMobile = useIsMobile();
-    const [viewMode, setViewMode] = React.useState<"table" | "card">(
-        isMobile ? "card" : "table",
-    );
+    const [viewMode, setViewMode] = React.useState<"table" | "card">("table");
     const [isFilterSheetOpen, setIsFilterSheetOpen] = React.useState(false);
+    const resolvedViewMode = isMobile ? "card" : viewMode;
 
     function replaceParams(updates: Record<string, string | null | undefined>) {
         const params = new URLSearchParams(searchParams.toString());
@@ -76,7 +76,7 @@ export function MyLedgerHistoryClient({
                 onClick={() => setViewMode("table")}
                 className={cn(
                     "flex items-center justify-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-all",
-                    viewMode === "table"
+                    resolvedViewMode === "table"
                         ? "bg-background text-primary shadow-sm"
                         : "bg-transparent text-muted-foreground hover:bg-muted",
                 )}
@@ -91,7 +91,7 @@ export function MyLedgerHistoryClient({
                 onClick={() => setViewMode("card")}
                 className={cn(
                     "flex items-center justify-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-all",
-                    viewMode === "card"
+                    resolvedViewMode === "card"
                         ? "bg-background text-primary shadow-sm"
                         : "bg-transparent text-muted-foreground hover:bg-muted",
                 )}
@@ -139,10 +139,10 @@ export function MyLedgerHistoryClient({
     );
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 p-4">
             <div>
                 <h1 className="text-lg font-bold">My Ledger History</h1>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-md text-muted-foreground">
                     Track your individual ledger history.
                 </p>
             </div>
@@ -153,7 +153,14 @@ export function MyLedgerHistoryClient({
                         <CardTitle className="text-sm font-medium text-foreground/75">
                             Income
                         </CardTitle>
-                        <CardDescription className="text-2xl font-semibold leading-tight text-foreground">{`+ ${formatCurrency(data.summary.increaseAmount)}`}</CardDescription>
+                        <CardDescription className="text-2xl font-semibold leading-tight text-emerald-600">
+                            +
+                            <NumberCounter
+                                value={Math.abs(data.summary.increaseAmount)}
+                                prefix={"VND"}
+                                className="font-bold text-emerald-600"
+                            />
+                        </CardDescription>
                     </CardHeader>
                 </Card>
 
@@ -162,7 +169,14 @@ export function MyLedgerHistoryClient({
                         <CardTitle className="text-sm font-medium text-foreground/75">
                             Expenditure
                         </CardTitle>
-                        <CardDescription className="text-2xl font-semibold leading-tight text-foreground">{`-${formatCurrency(data.summary.decreaseAmount)}`}</CardDescription>
+                        <CardDescription className="text-2xl font-semibold leading-tight  text-rose-600">
+                            -
+                            <NumberCounter
+                                value={Math.abs(data.summary.decreaseAmount)}
+                                prefix={"VND"}
+                                className="font-bold"
+                            />
+                        </CardDescription>
                     </CardHeader>
                 </Card>
 
@@ -171,14 +185,27 @@ export function MyLedgerHistoryClient({
                         <CardTitle className="text-sm font-medium text-foreground/75">
                             Net Amount
                         </CardTitle>
-                        <CardDescription className="text-2xl font-semibold leading-tight text-foreground">{`${data.summary.netAmount >= 0 ? "+" : ""} ${formatCurrency(data.summary.netAmount)}`}</CardDescription>
+                        <CardDescription className="text-2xl font-semibold leading-tight text-indigo-600">
+                            {`${data.summary.netAmount >= 0 ? "+" : ""} `}
+                            <NumberCounter
+                                value={Math.abs(data.summary.netAmount)}
+                                prefix={"VND"}
+                                className="font-bold"
+                            />
+                        </CardDescription>
                     </CardHeader>
                 </Card>
             </div>
 
             <Card className="py-0">
                 <CardContent>
-                    {viewMode === "table" ? (
+                    <div
+                        className={cn(
+                            resolvedViewMode === "table"
+                                ? "hidden md:block"
+                                : "hidden",
+                        )}
+                    >
                         <DataTable
                             columns={columns}
                             data={data.items}
@@ -201,33 +228,38 @@ export function MyLedgerHistoryClient({
                                 </div>,
                             ]}
                         />
-                    ) : (
-                        <>
-                            <div className="flex flex-wrap items-center justify-between gap-2 p-2">
+                    </div>
+                    <div
+                        className={cn(
+                            resolvedViewMode === "card" ? "block" : "md:hidden",
+                        )}
+                    >
+                        <div className="flex flex-wrap items-center justify-end gap-2 p-2 md:justify-between">
+                            <div className="hidden md:block">
                                 {viewModeToggle}
-                                <div className="flex items-center gap-2">
-                                    <div className="hidden md:flex">
-                                        {renderGroupFilterSelect()}
-                                    </div>
-                                    {mobileFilterButton}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="hidden md:flex">
+                                    {renderGroupFilterSelect()}
                                 </div>
+                                {mobileFilterButton}
                             </div>
-                            <div className="space-y-3 pb-3">
-                                {data.items.length === 0 ? (
-                                    <p className="py-6 text-center text-sm italic text-muted-foreground">
-                                        No items found.
-                                    </p>
-                                ) : (
-                                    data.items.map((item) => (
-                                        <LedgerHistoryCard
-                                            key={item.id}
-                                            item={item}
-                                        />
-                                    ))
-                                )}
-                            </div>
-                        </>
-                    )}
+                        </div>
+                        <div className="space-y-3 pb-3">
+                            {data.items.length === 0 ? (
+                                <p className="py-6 text-center text-sm italic text-muted-foreground">
+                                    No items found.
+                                </p>
+                            ) : (
+                                data.items.map((item) => (
+                                    <LedgerHistoryCard
+                                        key={item.id}
+                                        item={item}
+                                    />
+                                ))
+                            )}
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -269,7 +301,7 @@ function LedgerHistoryCard({ item }: { item: MyLedgerHistoryItem }) {
                                 : "text-rose-600",
                         )}
                     >
-                        {item.direction === "increase" ? "+" : "-"}
+                        {item.direction === "increase" ? "paid " : "owed "}
                         {formatCurrency(Math.abs(item.signedAmount))}
                     </span>
                 </div>

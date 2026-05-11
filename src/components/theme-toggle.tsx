@@ -2,26 +2,26 @@
 
 import * as React from "react";
 import { MoonIcon, SunIcon } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { useMounted } from "@/hooks/use-mounted";
 
 export function ThemeToggle() {
-  const [dark, setDark] = React.useState(false);
-
-  React.useEffect(() => {
-    setDark(document.documentElement.classList.contains("dark"));
-  }, []);
+  const { resolvedTheme, setTheme } = useTheme();
+  const mounted = useMounted();
 
   function toggle() {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle("dark", next);
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
   }
+
+  const dark = mounted ? resolvedTheme === "dark" : false;
 
   return (
     <Button
       variant="ghost"
       size="icon"
       onClick={toggle}
+      disabled={!mounted}
       className="size-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-primary/10"
     >
       {dark ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}

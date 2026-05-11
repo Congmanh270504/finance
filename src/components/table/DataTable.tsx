@@ -25,10 +25,12 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { useMounted } from "@/hooks/use-mounted";
 import { SearchIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { DataTableViewOptions } from "./DataTableViewOptions";
+import { useTheme } from "next-themes";
 
 type PaginationConfig = {
     total: number;
@@ -56,6 +58,7 @@ type DataTableActionContext<TData> = {
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
+    className?: string;
     emptyMessage?: string;
     meta?: any;
     pagination?: PaginationConfig;
@@ -69,9 +72,7 @@ interface DataTableProps<TData, TValue> {
     searchPlaceholder?: string;
     actions?:
         | DataTableAction[]
-        | ((
-              context: DataTableActionContext<TData>,
-          ) => DataTableAction[]);
+        | ((context: DataTableActionContext<TData>) => DataTableAction[]);
 }
 
 function isDataTableButtonAction(
@@ -111,6 +112,7 @@ const normalizeSearchValue = (value: unknown): string => {
 export function DataTable<TData, TValue>({
     columns,
     data,
+    className,
     emptyMessage = "No data",
     meta,
     pagination,
@@ -126,6 +128,7 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = useState("");
+    const mounted = useMounted();
 
     const globalFilterFn = React.useCallback<FilterFn<TData>>(
         (row, _columnId, filterValue) => {
@@ -161,6 +164,8 @@ export function DataTable<TData, TValue>({
         typeof actions === "function"
             ? actions({ table, globalFilter, setGlobalFilter })
             : actions;
+    const { resolvedTheme } = useTheme();
+    const isDark = mounted && resolvedTheme === "dark";
 
     const metaPagination = meta as PaginationConfig | undefined;
     const paginationConfig = pagination ?? metaPagination;
@@ -177,15 +182,20 @@ export function DataTable<TData, TValue>({
     };
 
     return (
-        <div className="w-full overflow-x-auto">
-            <div className="flex flex-col gap-2 p-2 md:flex-row md:items-center md:justify-between">
+        <div
+            className={cn(
+                "w-full overflow-x-auto dark:rounded-2xl dark:border dark:border-white/10 dark:bg-[rgba(8,15,28,0.42)] dark:text-slate-100 dark:shadow-[0_18px_45px_rgba(0,0,0,0.35)] dark:backdrop-blur-2xl",
+                className,
+            )}
+        >
+            <div className="flex flex-col gap-2 p-2 md:flex-row md:items-center md:justify-between dark:border-b dark:border-white/10 dark:bg-white/[0.04] dark:backdrop-blur-xl">
                 {enableSearch ? (
                     <div className="relative w-full max-w-md flex-1">
-                        <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground dark:text-cyan-200/80" />
                         <Input
                             value={globalFilter}
                             placeholder={searchPlaceholder}
-                            className="pl-9"
+                            className="pl-9 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-100 dark:placeholder:text-slate-300/70 dark:focus-visible:ring-cyan-400/40"
                             onChange={(event) =>
                                 table.setGlobalFilter(event.target.value)
                             }
@@ -222,11 +232,18 @@ export function DataTable<TData, TValue>({
             </div>
 
             <Table className="min-w-full">
-                <TableHeader className="sticky top-0 z-20 bg-slate-50/95 bg-linear-to-r from-blue-50 to-yellow-50  backdrop-blur-sm dark:border-zinc-800/80 dark:bg-zinc-950/95">
+                <TableHeader
+                    className={cn(
+                        "sticky top-0 z-20  backdrop-blur-sm ",
+                        isDark
+                            ? "dark:border-white/10 dark:bg-white/[0.05] dark:backdrop-blur-xl"
+                            : "bg-slate-50/95 bg-linear-to-r from-blue-50 to-yellow-50",
+                    )}
+                >
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow
                             key={headerGroup.id}
-                            className="hover:bg-primary/10 bg-primary/5 border-b border-gray-200 dark:border-zinc-800/70 dark:bg-zinc-700 dark:hover:bg-zinc-900/80"
+                            className="hover:bg-primary/10 bg-primary/5 border-b border-gray-200 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-cyan-400/10"
                         >
                             {headerGroup.headers.map((header) => (
                                 <TableHead
@@ -234,12 +251,12 @@ export function DataTable<TData, TValue>({
                                     className={cn(
                                         stickySet.has(header.column.id)
                                             ? cn(
-                                                  "sticky left-0 z-30  backdrop-blur-3xl border-b border-border after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border/60",
+                                                  "sticky left-0 z-30 backdrop-blur-3xl border-b border-border after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border/60 dark:border-white/10 dark:bg-white/[0.07] dark:after:bg-white/10",
                                                   stickyClampClass,
                                                   stickyHeaderClassName,
                                               )
                                             : undefined,
-                                        "font-semibold text-gray-700 dark:text-zinc-300",
+                                        "font-semibold text-gray-700 dark:text-slate-100",
                                     )}
                                 >
                                     {header.isPlaceholder
@@ -271,7 +288,7 @@ export function DataTable<TData, TValue>({
                                 }
                                 className={cn(
                                     onRowClick ? "cursor-pointer" : undefined,
-                                    "border-gray-100 odd:bg-white even:bg-blue-50 hover:bg-blue-100/60 dark:border-zinc-800/70 dark:odd:bg-zinc-950 dark:even:bg-zinc-900/40 dark:hover:bg-zinc-900/80",
+                                    "border-gray-100 odd:bg-white even:bg-blue-50 hover:bg-blue-100/60 dark:border-white/10 dark:odd:bg-white/[0.03] dark:even:bg-white/[0.06] dark:hover:bg-cyan-400/10",
                                     typeof rowClassName === "function"
                                         ? rowClassName(row.original)
                                         : rowClassName,
@@ -283,12 +300,12 @@ export function DataTable<TData, TValue>({
                                         className={cn(
                                             stickySet.has(cell.column.id)
                                                 ? cn(
-                                                      "sticky left-0 z-30 backdrop-blur-3xl border-b border-border after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border/60",
+                                                      "sticky left-0 z-30 backdrop-blur-3xl border-b border-border after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border/60 dark:border-white/10 dark:bg-white/[0.07] dark:after:bg-white/10",
                                                       stickyClampClass,
                                                       stickyCellClassName,
                                                   )
                                                 : undefined,
-                                            "text-zinc-900 dark:text-zinc-100",
+                                            "text-zinc-900 dark:text-slate-100",
                                         )}
                                     >
                                         {flexRender(
@@ -303,7 +320,7 @@ export function DataTable<TData, TValue>({
                         <TableRow>
                             <TableCell
                                 colSpan={columns.length}
-                                className="h-24 text-center text-muted-foreground italic"
+                                className="h-24 text-center text-muted-foreground italic dark:text-slate-300/80"
                             >
                                 {emptyMessage}
                             </TableCell>

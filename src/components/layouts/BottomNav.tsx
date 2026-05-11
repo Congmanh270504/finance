@@ -13,6 +13,7 @@ import {
     type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LiquidMetalButton } from "../ui/liquid-metal-button";
 
 interface NavItem {
     href: string;
@@ -44,7 +45,6 @@ export function BottomNav() {
         <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-stretch border-t border-primary/10 glass-strong safe-area-inset-bottom">
             {NAV_ITEMS.map(({ href, label, icon: Icon, primary }) => {
                 const isActive = pathname === href;
-
                 return (
                     <Link
                         key={href}
@@ -59,7 +59,12 @@ export function BottomNav() {
                         )}
                     >
                         {primary ? (
-                            <span
+                            // <span
+
+                            // >
+                            //     <Icon className="size-5" />
+                            // </span>
+                            <div
                                 className={cn(
                                     "-mt-5 flex size-12 items-center justify-center rounded-full shadow-lg transition-all duration-200",
                                     isActive
@@ -67,8 +72,15 @@ export function BottomNav() {
                                         : "bg-primary text-primary-foreground hover:scale-105 hover:shadow-[0_0_16px_2px_var(--glow-color)]",
                                 )}
                             >
-                                <Icon className="size-5" />
-                            </span>
+                                <LiquidMetalButton
+                                    viewMode="icon"
+                                    icon={
+                                        <Icon className="size-5 text-primary-foreground dark:text-white" />
+                                    }
+                                    // label="Add expense"
+                                    // onClick={() => setCreateOpen(true)}
+                                />
+                            </div>
                         ) : (
                             <Icon
                                 className={cn(

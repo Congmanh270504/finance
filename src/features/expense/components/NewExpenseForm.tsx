@@ -11,6 +11,7 @@ import {
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { DatePickerSimple } from "@/components/date-picker";
+import ImageUpload from "@/components/ImageUpload";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -61,6 +62,11 @@ const formSchema = z
         amountInput: z.string().trim().min(1, "Please enter an amount."),
         paidByMemberId: z.string().min(1, "Please select the payer."),
         shareStrategy: z.enum(["EQUAL", "CUSTOM"]),
+        imgUrl: z
+            .string()
+            .trim()
+            .optional()
+            .transform((value) => value || null),
         notes: z
             .string()
             .max(500, "Notes must be 500 characters or fewer.")
@@ -217,6 +223,7 @@ function createDefaultValues(
         amountInput: "",
         paidByMemberId: "",
         shareStrategy: "EQUAL",
+        imgUrl: "",
         notes: "",
         occurredAt: new Date().toISOString(),
         participants: [],
@@ -239,6 +246,7 @@ export function NewExpenseForm({
     const router = useRouter();
     const [members, setMembers] = React.useState<ExpenseFormMember[]>([]);
     const [isMembersLoading, setIsMembersLoading] = React.useState(false);
+    const [isImageUploading, setIsImageUploading] = React.useState(false);
     const [isSubmitting, startTransition] = React.useTransition();
 
     const {
@@ -296,6 +304,7 @@ export function NewExpenseForm({
         }
 
         setMembers([]);
+        setIsImageUploading(false);
         reset(createDefaultValues(groups, initialGroupId));
     }, [groups, initialGroupId, open, reset]);
 
@@ -500,6 +509,7 @@ export function NewExpenseForm({
                 amount: parseCurrencyInput(values.amountInput),
                 paidByMemberId: values.paidByMemberId,
                 shareStrategy: values.shareStrategy,
+                imgUrl: values.imgUrl?.trim() || undefined,
                 notes: values.notes?.trim() || undefined,
                 occurredAt: new Date(values.occurredAt).toISOString(),
                 splitShares,
@@ -566,7 +576,7 @@ export function NewExpenseForm({
                         className="flex max-h-[calc(90vh-112px)] flex-col"
                     >
                         <div className="overflow-y-auto px-6 pt-6 pb-4 no-scrollbar grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 rounded-2xl border bg-muted/20 p-4">
                                 <div className="space-y-2">
                                     <Label>Group</Label>
                                     <Controller
@@ -780,6 +790,25 @@ export function NewExpenseForm({
                                         </p>
                                     ) : null}
                                 </div>
+
+                                <div className="space-y-2 sm:col-span-2 xl:col-span-3">
+                                    <Label>Expense image</Label>
+                                    <ImageUpload
+                                        value={watch("imgUrl") ?? undefined}
+                                        onChange={(url) =>
+                                            setValue("imgUrl", url, {
+                                                shouldDirty: true,
+                                                shouldValidate: true,
+                                            })
+                                        }
+                                        disabled={isSubmitting}
+                                        folder="finance/expenses"
+                                        size={120}
+                                        className="w-full items-stretch"
+                                        dropzoneClassName="min-h-[180px]"
+                                        onUploadingChange={setIsImageUploading}
+                                    />
+                                </div>
                             </div>
 
                             <div className="rounded-2xl border bg-muted/20">
@@ -834,7 +863,7 @@ export function NewExpenseForm({
 
                                 <Separator />
 
-                                <div className="space-y-3 px-4 py-4 max-h-40 overflow-auto">
+                                <div className="space-y-3 px-4 py-4 max-h-100 overflow-auto">
                                     {isMembersLoading ? (
                                         <div className="flex items-center justify-center gap-2 rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
                                             <LoaderIcon className="size-4 animate-spin" />
@@ -861,7 +890,7 @@ export function NewExpenseForm({
                                                     className={cn(
                                                         "rounded-2xl border px-4 py-3 transition-colors ",
                                                         participant.enabled
-                                                            ? "border-emerald-200 bg-white"
+                                                            ? "border-emerald-200 dark:bg-[#11283f]"
                                                             : "border-dashed border-border bg-background/60 opacity-70",
                                                     )}
                                                 >
@@ -994,7 +1023,7 @@ export function NewExpenseForm({
                                 type="button"
                                 variant="outline"
                                 onClick={() => onOpenChange(false)}
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || isImageUploading}
                             >
                                 Cancel
                             </Button>
@@ -1003,13 +1032,19 @@ export function NewExpenseForm({
                                 disabled={
                                     isSubmitting ||
                                     isMembersLoading ||
-                                    !hasMembers
+                                    !hasMembers ||
+                                    isImageUploading
                                 }
                             >
                                 {isSubmitting ? (
                                     <>
                                         <LoaderIcon className="size-4 animate-spin" />
                                         Saving...
+                                    </>
+                                ) : isImageUploading ? (
+                                    <>
+                                        <LoaderIcon className="size-4 animate-spin" />
+                                        Uploading image...
                                     </>
                                 ) : (
                                     <>

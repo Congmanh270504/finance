@@ -1,20 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { BellIcon, SettingsIcon } from "lucide-react";
+import { SettingsIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import UserAvatar from "../user-avatar";
+import { AnimatedThemeToggle } from "../ui/animated-theme-toggle";
+import { ThemeChanger } from "../theme-changer";
+import { NotificationsMenu } from "./NotificationsMenu";
+import type { NotificationSummary } from "@/features/notification/types";
 
 export function MobileHeader({
     groupName,
     memberCount,
     className,
     user,
+    initialNotifications,
 }: {
     groupName: string;
     memberCount: number;
     className?: string;
+    initialNotifications?: NotificationSummary;
     user?: {
         name: string;
         email: string;
@@ -49,17 +55,11 @@ export function MobileHeader({
                 </div>
             </div>
             <div className="flex items-center gap-1">
-                <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="rounded-full"
-                    asChild
-                >
-                    <Link href="/members">
-                        <BellIcon className="size-4" />
-                        <span className="sr-only">Notifications</span>
-                    </Link>
-                </Button>
+                <NotificationsMenu initialNotifications={initialNotifications} />
+
+                <AnimatedThemeToggle />
+                <ThemeChanger />
+
                 <Button
                     variant="ghost"
                     size="icon-sm"

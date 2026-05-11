@@ -28,6 +28,7 @@ import type {
     DashboardOverviewData,
     DashboardQuickAccessItem,
 } from "@/features/dashboard/types";
+import { NumberCounter } from "@/components/ui/number-counter";
 
 function formatVND(amount: number) {
     return new Intl.NumberFormat("vi-VN").format(amount) + " VND";
@@ -191,14 +192,18 @@ export function DashboardClient({
                                 </p>
                                 <p
                                     className={[
-                                        "mt-1 break-words font-mono text-3xl font-bold tabular-nums",
+                                        "mt-1 break-words font-mono text-2xl font-bold tabular-nums flex gap-2",
                                         dashboard.netBalance >= 0
                                             ? "text-emerald-500 dark:text-emerald-400"
                                             : "text-red-500",
                                     ].join(" ")}
                                 >
                                     {dashboard.netBalance >= 0 ? "+" : "-"}
-                                    {formatVND(Math.abs(dashboard.netBalance))}
+                                    <NumberCounter
+                                        value={Math.abs(dashboard.netBalance)}
+                                        prefix={"VND"}
+                                        className="font-bold"
+                                    />
                                 </p>
                                 <p className="mt-0.5 text-xs text-muted-foreground">
                                     {dashboard.netBalance >= 0
@@ -211,7 +216,7 @@ export function DashboardClient({
                             </div>
                         </div>
                         <Separator className="my-3 opacity-30" />
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <div className="flex cursor-default items-center gap-2 rounded-lg border border-emerald-200/40 bg-emerald-50/80 px-3 py-2 transition-all duration-200 hover:scale-[1.02] hover:border-emerald-400/50 dark:border-emerald-800/30 dark:bg-emerald-950/20">
@@ -220,10 +225,14 @@ export function DashboardClient({
                                             <p className="truncate text-xs text-muted-foreground">
                                                 Owed to You
                                             </p>
-                                            <p className="font-mono text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                                                {formatVND(
-                                                    dashboard.totalOwedToMe,
-                                                )}
+                                            <p className="font-mono text-md font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                                                <NumberCounter
+                                                    value={
+                                                        dashboard.totalOwedToMe
+                                                    }
+                                                    prefix="VND"
+                                                    className="font-bold"
+                                                />
                                             </p>
                                         </div>
                                     </div>
@@ -240,8 +249,12 @@ export function DashboardClient({
                                             <p className="truncate text-xs text-muted-foreground">
                                                 You Owe
                                             </p>
-                                            <p className="font-mono text-sm font-semibold tabular-nums text-red-500">
-                                                {formatVND(dashboard.totalIOwe)}
+                                            <p className="font-mono text-md font-semibold tabular-nums text-red-500">
+                                                <NumberCounter
+                                                    value={dashboard.totalIOwe}
+                                                    prefix="VND"
+                                                    className="font-bold"
+                                                />
                                             </p>
                                         </div>
                                     </div>
@@ -268,8 +281,12 @@ export function DashboardClient({
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="px-3">
-                                <p className="text-lg font-bold font-mono text-blue-600 dark:text-blue-400 tabular-nums">
-                                    {formatVND(dashboard.totalGroupSpending)}
+                                <p className="text-md font-bold font-mono text-blue-600 dark:text-blue-400 tabular-nums">
+                                    <NumberCounter
+                                        value={dashboard.totalGroupSpending}
+                                        prefix="VND"
+                                        className="font-bold"
+                                    />
                                 </p>
                             </CardContent>
                         </Card>
@@ -290,8 +307,11 @@ export function DashboardClient({
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="px-3">
-                                <p className="font-mono text-lg font-bold tabular-nums text-violet-600 dark:text-violet-400">
-                                    {dashboard.transactionCount}
+                                <p className="font-mono text-md font-bold tabular-nums text-violet-600 dark:text-violet-400">
+                                    <NumberCounter
+                                        value={dashboard.transactionCount}
+                                        className="font-bold"
+                                    />
                                 </p>
                             </CardContent>
                         </Card>

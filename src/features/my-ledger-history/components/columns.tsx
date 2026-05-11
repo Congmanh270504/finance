@@ -122,7 +122,7 @@ export function createMyLedgerHistoryColumns(): ColumnDef<MyLedgerHistoryItem>[]
                         text-center
                         `}
                 >
-                    {row.original.direction === "increase" ? "+" : "-"}
+                    {row.original.direction === "increase" ? "paid " : "owed "}
                     {formatCurrency(Math.abs(row.original.signedAmount))}
                 </div>
             ),

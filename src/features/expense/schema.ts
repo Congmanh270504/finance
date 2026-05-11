@@ -22,6 +22,11 @@ export const expenseCreateSchema = z
             .positive("Amount must be greater than 0."),
         paidByMemberId: z.string().trim().min(1, "Please select the payer."),
         shareStrategy: z.nativeEnum(ShareStrategy).default(ShareStrategy.EQUAL),
+        imgUrl: z
+            .string()
+            .trim()
+            .optional()
+            .transform((value) => value || null),
         notes: z
             .string()
             .trim()

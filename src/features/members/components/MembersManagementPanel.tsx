@@ -3,10 +3,12 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowUpRight, Plus, Search } from "lucide-react";
+import { ArrowUpRight, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import DeleteDialog from "@/components/delete-dialog";
 import { GroupedAccordionTable } from "@/components/grouped-accordion-table";
+import UserAvatar from "@/components/user-avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -49,6 +51,129 @@ function buildDemoId(prefix: string) {
     }
 
     return `${prefix}-${Date.now()}`;
+}
+
+function formatVND(amount: number) {
+    return `${new Intl.NumberFormat("vi-VN").format(amount)} đ`;
+}
+
+function MemberMobileCard({
+    member,
+    onView,
+    onStartEdit,
+    onDelete,
+}: {
+    member: MemberManagementItem;
+    onView: (member: MemberManagementItem) => void;
+    onStartEdit: (member: MemberManagementItem) => void;
+    onDelete: (member: MemberManagementItem) => void;
+}) {
+    const netAmountClass =
+        member.netAmount >= 0
+            ? "font-semibold text-emerald-600"
+            : "font-semibold text-rose-600";
+
+    return (
+        <Card
+            className="cursor-pointer border-border/70 bg-white/95 shadow-sm transition-colors hover:bg-sky-50/70 dark:border-white/12 dark:!bg-white/10 dark:ring-white/10 dark:shadow-[0_20px_44px_-24px_rgba(0,0,0,0.85)] dark:backdrop-blur-2xl dark:hover:!bg-white/14"
+            role="button"
+            tabIndex={0}
+            onClick={() => onView(member)}
+            onKeyDown={(event) => {
+                if (event.target !== event.currentTarget) return;
+
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onView(member);
+                }
+            }}
+        >
+            <CardContent className="space-y-3 p-3">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <UserAvatar
+                            src={member.imgUrl ?? undefined}
+                            alt={member.name}
+                            fallback={member.name.charAt(0).toUpperCase()}
+                            className="size-10 shrink-0"
+                        />
+                        <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold">
+                                {member.name}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                                {member.email}
+                            </p>
+                        </div>
+                    </div>
+                    {member.isActive ? (
+                        <Badge className="shrink-0 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                            Active
+                        </Badge>
+                    ) : (
+                        <Badge
+                            variant="outline"
+                            className="shrink-0 border-amber-200 bg-amber-50 text-amber-700"
+                        >
+                            Inactive
+                        </Badge>
+                    )}
+                </div>
+
+                <div className="space-y-2 rounded-lg bg-muted/35 px-3 py-2 text-xs dark:border dark:border-white/12 dark:bg-black/18 dark:backdrop-blur-md">
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">
+                            Balance Ledger
+                        </span>
+                        <span className={netAmountClass}>
+                            {member.netAmount > 0 ? "+" : ""}
+                            {formatVND(member.netAmount)}
+                        </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">Entries</span>
+                        <span className="font-medium">
+                            {member.ledgerCount} ledger entries
+                        </span>
+                    </div>
+                </div>
+
+                <div
+                    className="flex items-center justify-between gap-1 border p-2 rounded-md bg-muted/50 dark:border-white/12 dark:bg-white/10"
+                    data-no-row-open="true"
+                    onClick={(event) => event.stopPropagation()}
+                >
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="h-8 w-8"
+                        onClick={() => onView(member)}
+                    >
+                        <Eye className="size-4 text-sky-600" />
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="h-8 w-8"
+                        onClick={() => onStartEdit(member)}
+                    >
+                        <Pencil className="size-4 text-amber-600" />
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
+                        className="h-8 w-8"
+                        onClick={() => onDelete(member)}
+                    >
+                        <Trash2 className="size-4 text-rose-600" />
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
 }
 
 export function MembersManagementPanel({
@@ -125,29 +250,35 @@ export function MembersManagementPanel({
                 )
                 .map((group) => ({
                     key: group.id,
-                    label: `${group.name} (${group.currency})`,
+                    label: `${group.name}`,
                     action: (
                         <Button
                             type="button"
                             variant="outline"
                             size="sm"
                             asChild
-                            className="border-sky-300/80 bg-white/90"
+                            className="border-sky-300/80 bg-white/90 dark:border-white/14 dark:bg-white/10 dark:text-sky-50 dark:backdrop-blur-md"
                         >
                             <Link href={`/groups/${group.id}`}>
-                                Group details
+                                <div className="max-sm:hidden">
+                                    Group details
+                                </div>
                                 <ArrowUpRight className="size-4" />
                             </Link>
                         </Button>
                     ),
                     items: filteredMembers
-                        .filter((member) => member.linkedGroupIds.includes(group.id))
+                        .filter((member) =>
+                            member.linkedGroupIds.includes(group.id),
+                        )
                         .map((member) => {
-                            const perGroupStats = member.groupLedgerStats[group.id];
+                            const perGroupStats =
+                                member.groupLedgerStats[group.id];
                             return {
                                 ...member,
                                 oweAmount: perGroupStats?.oweAmount ?? 0,
-                                receiveAmount: perGroupStats?.receiveAmount ?? 0,
+                                receiveAmount:
+                                    perGroupStats?.receiveAmount ?? 0,
                                 netAmount: perGroupStats?.netAmount ?? 0,
                                 ledgerCount: perGroupStats?.ledgerCount ?? 0,
                             };
@@ -229,8 +360,8 @@ export function MembersManagementPanel({
                         result.data.map((member) => [member.id, member]),
                     );
                     onMembersChange(
-                        data.members.map((member) =>
-                            updatedMap.get(member.id) ?? member,
+                        data.members.map(
+                            (member) => updatedMap.get(member.id) ?? member,
                         ),
                     );
                     router.refresh();
@@ -339,7 +470,9 @@ export function MembersManagementPanel({
         } catch (error) {
             toast.error("Failed to save member", {
                 description:
-                    error instanceof Error ? error.message : "Please try again.",
+                    error instanceof Error
+                        ? error.message
+                        : "Please try again.",
             });
         } finally {
             setSubmittingMember(false);
@@ -377,7 +510,9 @@ export function MembersManagementPanel({
         } catch (error) {
             toast.error("Failed to delete member", {
                 description:
-                    error instanceof Error ? error.message : "Please try again.",
+                    error instanceof Error
+                        ? error.message
+                        : "Please try again.",
             });
         } finally {
             setDeletingMemberId(null);
@@ -497,6 +632,14 @@ export function MembersManagementPanel({
                         onRowClick={openViewMember}
                         activeRowId={selectedMember?.id}
                         emptyMessage="No members match the current filters."
+                        renderMobileItem={(member) => (
+                            <MemberMobileCard
+                                member={member}
+                                onView={openViewMember}
+                                onStartEdit={openEditMember}
+                                onDelete={setDeleteTarget}
+                            />
+                        )}
                     />
                 </CardContent>
             </Card>

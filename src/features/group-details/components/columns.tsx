@@ -146,7 +146,7 @@ export function getGroupLedgerHistoryColumns({
                     <div
                         className={[
                             "flex items-center justify-center gap-2 font-semibold tabular-nums",
-                            isIncrease ? "text-emerald-700" : "text-amber-700",
+                            isIncrease ? "text-emerald-500" : "text-amber-700",
                         ].join(" ")}
                     >
                         {isIncrease ? (

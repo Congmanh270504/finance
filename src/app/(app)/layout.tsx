@@ -121,6 +121,7 @@ export default async function AppLayout({
                             }}
                             groupName={context.primaryGroupName}
                             memberCount={context.primaryGroupMemberCount}
+                            initialNotifications={notificationsResult.data}
                         />
                     </div>
                     <div className="relative min-h-0 flex-1 overflow-y-auto pb-16 md:p-1">

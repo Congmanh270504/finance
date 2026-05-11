@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { Camera, User, X } from "lucide-react";
+import { Camera, Upload, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFileUpload } from "@/hooks/useFileUpload";
+import { cn } from "@/lib/utils";
+import { Spinner } from "./ui/spinner";
 
 interface ImageUploadProps {
     value?: string;
@@ -11,6 +13,9 @@ interface ImageUploadProps {
     size?: number;
     folder?: string;
     disabled?: boolean;
+    className?: string;
+    dropzoneClassName?: string;
+    onUploadingChange?: (uploading: boolean) => void;
 }
 
 export default function ImageUpload({
@@ -19,6 +24,9 @@ export default function ImageUpload({
     size = 88,
     folder = "finance/members",
     disabled = false,
+    className,
+    dropzoneClassName,
+    onUploadingChange,
 }: ImageUploadProps) {
     const [localPreview, setLocalPreview] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -61,6 +69,10 @@ export default function ImageUpload({
         },
     });
 
+    useEffect(() => {
+        onUploadingChange?.(uploading);
+    }, [onUploadingChange, uploading]);
+
     const handleFileChange = async (
         event: React.ChangeEvent<HTMLInputElement>,
     ) => {
@@ -87,42 +99,87 @@ export default function ImageUpload({
     };
 
     return (
-        <div className="flex flex-col items-center gap-2">
+        <div
+            className={cn(
+                "flex flex-col gap-2",
+                folder === "finance/members" ? "items-center" : "items-stretch",
+                className,
+            )}
+        >
             <div
                 className="relative group"
-                style={{ width: size, height: size }}
+                style={
+                    folder === "finance/members"
+                        ? { width: size, height: size }
+                        : {}
+                }
                 onClick={() =>
                     !disabled && !uploading && inputRef.current?.click()
                 }
             >
-                <div
-                    className="flex h-full w-full items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-border bg-muted/30 transition-all group-hover:border-primary/60"
-                    style={{ width: size, height: size }}
-                >
-                    {preview ? (
-                        <Image
-                            src={preview}
-                            alt="Avatar"
-                            width={size}
-                            height={size}
-                            className="h-full w-full rounded-full object-cover"
-                            unoptimized
-                        />
-                    ) : (
-                        <User
-                            className="text-muted-foreground/40"
-                            style={{ width: size * 0.4, height: size * 0.4 }}
-                        />
-                    )}
-                </div>
+                {folder === "finance/members" ? (
+                    <>
+                        <div
+                            className="flex h-full w-full items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-border bg-muted/30 transition-all group-hover:border-primary/60"
+                            style={{ width: size, height: size }}
+                        >
+                            {preview ? (
+                                <Image
+                                    src={preview}
+                                    alt="Avatar"
+                                    width={size}
+                                    height={size}
+                                    className="h-full w-full rounded-full object-cover"
+                                    unoptimized
+                                />
+                            ) : (
+                                <User
+                                    className="text-muted-foreground/40"
+                                    style={{
+                                        width: size * 0.4,
+                                        height: size * 0.4,
+                                    }}
+                                />
+                            )}
+                        </div>
 
-                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                    {uploading ? (
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-t-transparent border-white" />
-                    ) : !disabled ? (
-                        <Camera className="h-5 w-5 text-white" />
-                    ) : null}
-                </div>
+                        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                            {uploading ? (
+                                <div className="h-5 w-5 animate-spin rounded-full border-2 border-t-transparent border-white" />
+                            ) : !disabled ? (
+                                <Camera className="h-5 w-5 text-white" />
+                            ) : null}
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div
+                            className={cn(
+                                "relative flex w-full min-h-[100px] items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-border bg-muted/30 px-6 py-8 transition-all group-hover:border-primary/60 group-hover:bg-muted/40",
+                                disabled && "cursor-not-allowed opacity-70",
+                                dropzoneClassName,
+                            )}
+                        >
+                            {preview ? (
+                                <Image
+                                    src={preview}
+                                    alt="Avatar"
+                                    fill
+                                    className="h-full w-full object-contain rounded-xl"
+                                    unoptimized
+                                />
+                            ) : (
+                                <Upload
+                                    className="text-muted-foreground/40"
+                                    style={{
+                                        width: size * 0.4,
+                                        height: size * 0.4,
+                                    }}
+                                />
+                            )}
+                        </div>
+                    </>
+                )}
 
                 {preview && !uploading && !disabled ? (
                     <button
@@ -144,13 +201,21 @@ export default function ImageUpload({
                 disabled={uploading || disabled}
             />
 
-            <p className="text-center text-[11px] text-muted-foreground">
-                {uploading
-                    ? "Uploading..."
-                    : disabled
-                      ? "Avatar"
-                      : "Click to select an image"}
-            </p>
+            <div className="text-center text-[11px] text-muted-foreground">
+                {uploading ? (
+                    <div className="flex items-center gap-2 justify-center">
+                        <Spinner /> Uploading...
+                    </div>
+                ) : disabled ? (
+                    folder === "finance/members" ? (
+                        "Avatar"
+                    ) : (
+                        "Expense image"
+                    )
+                ) : (
+                    "Click to select an image"
+                )}
+            </div>
 
             {error ? (
                 <p className="text-center text-[11px] font-medium text-destructive">

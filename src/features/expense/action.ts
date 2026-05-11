@@ -473,6 +473,7 @@ export async function createExpenseAction(
                     shareStrategy: parsed.data.shareStrategy,
                     notes: parsed.data.notes,
                     occurredAt: parsed.data.occurredAt,
+                    imgUrl: parsed.data.imgUrl,
                     splitShares: {
                         create: parsed.data.splitShares.map((share) => ({
                             memberId: share.memberId,
